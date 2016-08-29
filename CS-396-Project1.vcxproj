@@ -88,12 +88,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(OGRE_HOME140)\include;$(OGRE_HOME140)\include\OIS;$(OGRE_HOME140)\include\OGRE;$(OGRE_HOME140)\Samples\Common\include;$(OGRE_HOME140)\include\OGRE\Overlay;$(BOOST_HOME140);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OGRE_HOME140)\include;$(OGRE_HOME140)\include\OIS;$(OGRE_HOME140)\include\OGRE;$(OGRE_HOME140)\Samples\Common\include;$(OGRE_HOME140)\include\OGRE\Overlay;$(BOOST_HOME140);$(BULLET_HOME)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OGRE_HOME140)\lib\$(Configuration);$(BOOST_HOME140)\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OGRE_HOME140)\lib\$(Configuration);$(BOOST_HOME140)\lib;$(BULLET_HOME)\bin</AdditionalLibraryDirectories>
       <AdditionalDependencies>OgreMain_d.lib;OIS_d.lib;OgreOverlay_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -119,7 +120,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(OGRE_HOME140)\include;$(OGRE_HOME140)\include\OIS;$(OGRE_HOME140)\include\OGRE;$(OGRE_HOME140)\Samples\Common\include;$(OGRE_HOME140)\include\OGRE\Overlay;$(BOOST_HOME140);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OGRE_HOME140)\include;$(OGRE_HOME140)\include\OIS;$(OGRE_HOME140)\include\OGRE;$(OGRE_HOME140)\Samples\Common\include;$(OGRE_HOME140)\include\OGRE\Overlay;$(BOOST_HOME140);$(BULLET_HOME)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,7 +128,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OGRE_HOME140)\lib\$(Configuration);$(BOOST_HOME140)\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OgreMain.lib;OIS.lib;OgreOverlay.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OgreMain.lib;OIS.lib;OgreOverlay.lib;LinearMath.lib;Bullet3Dynamics.lib;Bullet3Collision.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,14 +149,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BaseApplication.cpp" />
-    <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="TutorialApplication.cpp" />
+    <ClCompile Include="GomokuGame.cpp" />
+    <ClCompile Include="Physics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BaseApplication.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="TutorialApplication.h" />
+    <ClInclude Include="GomokuGame.h" />
+    <ClInclude Include="Physics.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\BulletCollision.vcxproj">
+      <Project>{e87cf928-40fb-604a-9b55-5b5ebb74218e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\BulletDynamics.vcxproj">
+      <Project>{eff92a7c-4f74-fb4c-ac3d-19a8ffab8baf}</Project>
+    </ProjectReference>
+    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\LinearMath.vcxproj">
+      <Project>{27fb4b66-d600-934d-8e2d-e6d48a5b4a3a}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
