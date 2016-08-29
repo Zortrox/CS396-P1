@@ -13,6 +13,7 @@ GomokuGame::GomokuGame()
     mTrayMgr(0),
     mCameraMan(0),
     mDetailsPanel(0),
+	mCursorMode(false),
     mCursorWasVisible(false),
     mShutDown(false),
     mInputManager(0),
@@ -26,6 +27,7 @@ GomokuGame::GomokuGame()
 	mBoardX = 0;
 	mBoardY = 0;
 	mOnBoard = false;
+	mMenuState = menuState::NONE;
 }
 
 //-------------------------------------------------------------------------------------
@@ -108,24 +110,8 @@ void GomokuGame::createFrameListener(void)
     //Register as a Window listener
     Ogre::WindowEventUtilities::addWindowEventListener(mWindow, this);
 
-	//Fix for 1.9 - take this out:
-	/*OgreBites::InputContext inputContext;
-	inputContext.mMouse = mMouse; 
-	inputContext.mKeyboard = mKeyboard;
-	mTrayMgr = new OgreBites::SdkTrayManager("TrayMgr", mWindow, inputContext, this);*/
-
-	/*OgreBites::InputContext input;
-	input.mAccelerometer = NULL;
-	input.mKeyboard = mKeyboard;
-	input.mMouse = mMouse;
-	input.mMultiTouch = NULL;
-	mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, input, this);*/
-
-	//Fix for 1.9 - put this in:
 	mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mInputContext, this);
-	//mTrayMgr = new OgreBites::SdkTrayManager("InterfaceName", mWindow, mMouse, this);
     mTrayMgr->showFrameStats(OgreBites::TL_BOTTOMLEFT);
-    mTrayMgr->showLogo(OgreBites::TL_BOTTOMRIGHT);
     mTrayMgr->hideCursor();
 
     // create a params panel for displaying sample details
@@ -150,6 +136,10 @@ void GomokuGame::createFrameListener(void)
     mDetailsPanel->setParamValue(10, "Solid");
     mDetailsPanel->hide();
 
+	mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
+	mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
+	mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+
     mRoot->addFrameListener(this);
 }
 //-----------------------------------------------------------------------------
@@ -170,22 +160,22 @@ void GomokuGame::createScene(void) {
 	entTable->setCastShadows(true);
 	nodeTable->setScale(Ogre::Vector3(2, 2, 2));
 	//BULLET
-	btCollisionShape *boxShape = new btBoxShape(btVector3(2.0f, 0.15f, 2.0f)); //btConvexTriangleMeshShape(tMeshTable);
-	physicsEngine->getCollisionShapes().push_back(boxShape);
+	btCollisionShape *shapeTable = new btBoxShape(btVector3(2.0f, 0.18f, 2.0f)); //btConvexTriangleMeshShape(tMeshTable);
+	physicsEngine->getCollisionShapes().push_back(shapeTable);
 	btTransform startTransform;
 	startTransform.setIdentity();
 	//startTransform.setRotation(btQuaternion(1.0f, 1.0f, 1.0f, 0));
 	btScalar mass = 10.0f;
 	btVector3 localInertia(0, 0, 0);
 	startTransform.setOrigin(btVector3(0, 10, 0));
-	boxShape->calculateLocalInertia(mass, localInertia);
+	shapeTable->calculateLocalInertia(mass, localInertia);
 	btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, boxShape, localInertia);
-	btRigidBody *boxBody = new btRigidBody(rbInfo);
-	boxBody->setRestitution(1);
-	boxBody->setFriction(2);
-	boxBody->setUserPointer(nodeTable);
-	physicsEngine->getDynamicsWorld()->addRigidBody(boxBody);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, shapeTable, localInertia);
+	tableRigidBody = new btRigidBody(rbInfo);
+	tableRigidBody->setRestitution(1);
+	tableRigidBody->setFriction(2);
+	tableRigidBody->setUserPointer(nodeTable);
+	physicsEngine->getDynamicsWorld()->addRigidBody(tableRigidBody);
 
 	Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 	Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
@@ -209,6 +199,12 @@ void GomokuGame::createScene(void) {
 	groundBody->setFriction(5);
 	physicsEngine->getDynamicsWorld()->addRigidBody(groundBody);
 
+	//Selector Stone
+	Ogre::SceneNode* pickNode = nodeTable->createChildSceneNode("PickNode");
+	Ogre::Entity* entStone = mSceneMgr->createEntity("PickStone", "GomokuStonePick.mesh");
+	pickNode->attachObject(entStone);
+	pickNode->setScale(0.081f, 0.081f, 0.081f);
+
 	//LIGHTS
 	Ogre::Light* directionalLight = mSceneMgr->createLight("directionalLight");
 	directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
@@ -218,29 +214,10 @@ void GomokuGame::createScene(void) {
 
 	//ambient light (brighten it up a little)
 	mSceneMgr->setAmbientLight(Ogre::ColourValue(0.5, 0.5, 0.5));
-
-	createGameArea(nodeTable);
 }
 //-------------------------------------------------------------------------------------
 void GomokuGame::destroyScene(void)
 {
-}
-//-------------------------------------------------------------------------------------
-void GomokuGame::createGameArea(Ogre::SceneNode* tableNode) {
-	vecGameArea.resize(15);
-	for (size_t i = 0; i < vecGameArea.size(); i++) {
-		vecGameArea[i].resize(15);
-		for (size_t j = 0; j < vecGameArea[i].size(); j++) {
-			vecGameArea[i][j] = stoneColor::NONE;
-			std::string strNum = std::to_string(i) + "_" + std::to_string(j);
-			Ogre::SceneNode* child = tableNode->createChildSceneNode("nodeStone_" + strNum, (Ogre::Vector3((float)i * 0.086f - 0.61f, 0.1f, (float)j * 0.088f - 0.61f)));
-		}
-	}
-
-	Ogre::SceneNode* pickNode = tableNode->createChildSceneNode("PickNode");
-	Ogre::Entity* entStone = mSceneMgr->createEntity("PickStone", "GomokuStonePick.mesh");
-	pickNode->attachObject(entStone);
-	pickNode->setScale(0.081f, 0.081f, 0.081f);
 }
 //-------------------------------------------------------------------------------------
 void GomokuGame::createViewports(void)
@@ -318,7 +295,7 @@ bool GomokuGame::setup(void)
 	plugins_toLoad.push_back("RenderSystem_GL");
 	plugins_toLoad.push_back("Plugin_ParticleFX");
 	plugins_toLoad.push_back("Plugin_BSPSceneManager");
-	plugins_toLoad.push_back("Plugin_CgProgramManager");
+	//plugins_toLoad.push_back("Plugin_CgProgramManager");
 
 	for (Ogre::StringVector::iterator j = plugins_toLoad.begin(); j != plugins_toLoad.end(); j++)
 	{
@@ -366,8 +343,10 @@ bool GomokuGame::frameRenderingQueued(const Ogre::FrameEvent& evt)
 	if (physicsEngine != NULL) {
 		physicsEngine->getDynamicsWorld()->stepSimulation(evt.timeSinceLastFrame);
 
-		for (int i = 0; i < 2+numBoxes; i++) {
-			btCollisionObject* obj = physicsEngine->getDynamicsWorld()->getCollisionObjectArray()[i];
+		btCollisionObjectArray arrObj = physicsEngine->getDynamicsWorld()->getCollisionObjectArray();
+
+		for (int i = 0; i < arrObj.size(); i++) {
+			btCollisionObject* obj = arrObj[i];
 			btRigidBody* body = btRigidBody::upcast(obj);
 
 			if (body && body->getMotionState()) {
@@ -388,7 +367,7 @@ bool GomokuGame::frameRenderingQueued(const Ogre::FrameEvent& evt)
 	mInputContext.capture();
 
 	bool bVisible = true;
-	if (!mOnBoard || vecGameArea[mBoardX][mBoardY] != stoneColor::NONE) bVisible = false;
+	if (!mOnBoard || !gBoard.emptyTile(mBoardX, mBoardY)) bVisible = false;
 	mSceneMgr->getSceneNode("PickNode")->setVisible(bVisible);
 
     mTrayMgr->frameRenderingQueued(evt);
@@ -451,70 +430,103 @@ bool GomokuGame::keyPressed( const OIS::KeyEvent &arg )
             aniso = 8;
             break;
         case 'A':
-            newVal = "None";
-            tfo = Ogre::TFO_NONE;
-            aniso = 1;
-            break;
+newVal = "None";
+tfo = Ogre::TFO_NONE;
+aniso = 1;
+break;
         default:
-            newVal = "Bilinear";
-            tfo = Ogre::TFO_BILINEAR;
-            aniso = 1;
-        }
+			newVal = "Bilinear";
+			tfo = Ogre::TFO_BILINEAR;
+			aniso = 1;
+		}
 
-        Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(tfo);
-        Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(aniso);
-        mDetailsPanel->setParamValue(9, newVal);
-    }
-    else if (arg.key == OIS::KC_R)   // cycle polygon rendering mode
-    {
-        Ogre::String newVal;
-        Ogre::PolygonMode pm;
+		Ogre::MaterialManager::getSingleton().setDefaultTextureFiltering(tfo);
+		Ogre::MaterialManager::getSingleton().setDefaultAnisotropy(aniso);
+		mDetailsPanel->setParamValue(9, newVal);
+	}
+	else if (arg.key == OIS::KC_R)   // cycle polygon rendering mode
+	{
+		Ogre::String newVal;
+		Ogre::PolygonMode pm;
 
-        switch (mCamera->getPolygonMode())
-        {
-        case Ogre::PM_SOLID:
-            newVal = "Wireframe";
-            pm = Ogre::PM_WIREFRAME;
-            break;
-        case Ogre::PM_WIREFRAME:
-            newVal = "Points";
-            pm = Ogre::PM_POINTS;
-            break;
-        default:
-            newVal = "Solid";
-            pm = Ogre::PM_SOLID;
-        }
+		switch (mCamera->getPolygonMode())
+		{
+		case Ogre::PM_SOLID:
+			newVal = "Wireframe";
+			pm = Ogre::PM_WIREFRAME;
+			break;
+		case Ogre::PM_WIREFRAME:
+			newVal = "Points";
+			pm = Ogre::PM_POINTS;
+			break;
+		default:
+			newVal = "Solid";
+			pm = Ogre::PM_SOLID;
+		}
 
-        mCamera->setPolygonMode(pm);
-        mDetailsPanel->setParamValue(10, newVal);
-    }
-    else if(arg.key == OIS::KC_F5)   // refresh all textures
-    {
-        Ogre::TextureManager::getSingleton().reloadAll();
-    }
-    else if (arg.key == OIS::KC_SYSRQ)   // take a screenshot
-    {
-        mWindow->writeContentsToTimestampedFile("screenshot", ".jpg");
-    }
-    else if (arg.key == OIS::KC_ESCAPE)
-    {
-        mShutDown = true;
-    }
+		mCamera->setPolygonMode(pm);
+		mDetailsPanel->setParamValue(10, newVal);
+	}
+	else if (arg.key == OIS::KC_F5)   // refresh all textures
+	{
+		Ogre::TextureManager::getSingleton().reloadAll();
+	}
+	else if (arg.key == OIS::KC_SYSRQ)   // take a screenshot
+	{
+		mWindow->writeContentsToTimestampedFile("screenshot", ".jpg");
+	}
+	else if (arg.key == OIS::KC_ESCAPE)
+	{
+		mCursorMode = !mCursorMode;
+		if (mCursorMode) {
+			mTrayMgr->showCursor();
+			mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->show();
+			
+		}
+		else {
+			mTrayMgr->hideCursor();
+			mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+		}
+	}
+	else if (arg.key == OIS::KC_O) {
+		for (int i = 0; i < 15; i++) {
+			for (int j = 0; j < 15; j++) {
+				std::string stre = "fill" + std::to_string(i) + "_" + std::to_string(j);
+				std::string strn = "fillNode" + std::to_string(i) + "_" + std::to_string(j);
+				int color = rand() % 2 + 1;
 
-    mCameraMan->injectKeyDown(arg);
-    return true;
+				if (gBoard.addStone(i, j, color, stre, strn)) {
+					Ogre::Entity* entStone;
+					if (color == stoneColor::BLACK) {
+						entStone = mSceneMgr->createEntity(stre, "GomokuStoneBlack.mesh");
+					}
+					else {
+						entStone = mSceneMgr->createEntity(stre, "GomokuStoneWhite.mesh");
+					}
+					Ogre::SceneNode* tableNode = mSceneMgr->getSceneNode("GomokuTable");
+					Ogre::SceneNode* stoneNode = tableNode->createChildSceneNode(strn,
+						(Ogre::Vector3((float)i * 0.086f - 0.61f, 0.1f, (float)j * 0.088f - 0.61f)));
+					stoneNode->attachObject(entStone);
+					stoneNode->setScale(0.081f, 0.081f, 0.081f);
+				}
+			}
+		}
+	}
+
+	mCameraMan->injectKeyDown(arg);
+	return true;
 }
 
-bool GomokuGame::keyReleased( const OIS::KeyEvent &arg )
+bool GomokuGame::keyReleased(const OIS::KeyEvent &arg)
 {
-    mCameraMan->injectKeyUp(arg);
-    return true;
+	mCameraMan->injectKeyUp(arg);
+	return true;
 }
 
-bool GomokuGame::mouseMoved( const OIS::MouseEvent &arg )
+bool GomokuGame::mouseMoved(const OIS::MouseEvent &arg)
 {
 	mPickCoords = getGameLookCoords();
-	float pX = floor((mPickCoords.x + .6501f)/1.203f * 14);
+	float pX = floor((mPickCoords.x + .6501f) / 1.203f * 14);
 	float pY = mPickCoords.y;
 	float pZ = floor((mPickCoords.z + .651f) / 1.232f * 14);
 	mBoardX = pX;
@@ -532,37 +544,79 @@ bool GomokuGame::mouseMoved( const OIS::MouseEvent &arg )
 
 	Ogre::SceneNode* pickNode = mSceneMgr->getSceneNode("PickNode");
 	pickNode->setPosition(mPickCoords);
-	
-	if (mTrayMgr->injectMouseMove(arg)) return true;
-    mCameraMan->injectMouseMove(arg);
-    return true;
+
+	if (mCursorMode && mTrayMgr->injectMouseMove(arg)) return true;
+	else if (!mCursorMode) mCameraMan->injectMouseMove(arg);
+	return true;
 }
 
-bool GomokuGame::mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
+bool GomokuGame::mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id)
 {
 	if (id == OIS::MB_Left) {
-		if (mOnBoard && vecGameArea[mBoardX][mBoardY] == stoneColor::NONE) {
-			//place stone at location
-			vecGameArea[mBoardX][mBoardY] = stoneColor::BLACK;
+		if (mOnBoard && !mCursorMode) {
+			//create stone names
 			std::string strNum = std::to_string(mBoardX) + "_" + std::to_string(mBoardY);
-			Ogre::Entity* entStone = mSceneMgr->createEntity("Stone" + strNum, "GomokuStoneBlack.mesh");
-			Ogre::SceneNode* stoneNode = mSceneMgr->getSceneNode("nodeStone_" + strNum);
-			stoneNode->attachObject(entStone);
-			stoneNode->setScale(0.081f, 0.081f, 0.081f);
-		}
+			std::string strEntity = "entStone_" + strNum;
+			std::string strNode = "nodeStone_" + strNum;
 
-		//shootBox();
+			//place stone at location if not already one there
+			if (gBoard.addStone(mBoardX, mBoardY, stoneColor::BLACK, strEntity, strNode)) {
+				
+				Ogre::Entity* entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneBlack.mesh");
+				Ogre::SceneNode* tableNode = mSceneMgr->getSceneNode("GomokuTable");
+				Ogre::SceneNode* stoneNode = tableNode->createChildSceneNode(strNode,
+					(Ogre::Vector3((float)mBoardX * 0.086f - 0.61f, 0.1f, (float)mBoardY * 0.088f - 0.61f)));
+				stoneNode->attachObject(entStone);
+				stoneNode->setScale(0.081f, 0.081f, 0.081f);
+			}
+		}
 	}
-    if (mTrayMgr->injectMouseDown(arg, id)) return true;
+	else if (id == OIS::MB_Right) {
+		shootBox();
+	}
+
+    if (mCursorMode && mTrayMgr->injectMouseDown(arg, id)) return true;
     mCameraMan->injectMouseDown(arg, id);
     return true;
 }
 
 bool GomokuGame::mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id )
 {
-    if (mTrayMgr->injectMouseUp(arg, id)) return true;
+    if (mCursorMode && mTrayMgr->injectMouseUp(arg, id)) return true;
     mCameraMan->injectMouseUp(arg, id);
     return true;
+}
+
+void GomokuGame::buttonHit(OgreBites::Button * button)
+{
+	if (button->getName() == "buttonQuit") {
+		mShutDown = true;
+	}
+	else if (button->getName() == "buttonNew") {
+		tableRigidBody->activate();
+		setStonePhysics();
+		
+
+
+		mTrayMgr->destroyWidget("buttonNew");
+		mTrayMgr->destroyWidget("buttonQuit");
+		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAI", "vs AI");
+		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
+
+		//mCursorMode = false;
+		//mTrayMgr->hideCursor();
+		//mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+	}
+	else if (button->getName() == "buttonNewAI") {
+		//remove all game physics objects
+		//remove all game entities
+		//remove all game nodes
+
+		//start new game
+	}
+	else if (button->getName() == "buttonNewHum") {
+
+	}
 }
 
 //Adjust mouse clipping area
@@ -619,17 +673,17 @@ void GomokuGame::shootBox() {
 	nodeStone->setScale(0.15f, 0.15f, 0.15f);
 
 	//BULLET
-	btCollisionShape *boxShape = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
-	physicsEngine->getCollisionShapes().push_back(boxShape);
+	btCollisionShape *cylShape = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
+	physicsEngine->getCollisionShapes().push_back(cylShape);
 	btTransform startTransform;
 	startTransform.setIdentity();
-	startTransform.setRotation(btQuaternion(1.0f, 1.0f, 1.0f, 0));
+	startTransform.setRotation(btQuaternion(0, 0, 0, 1.0f));
 	btScalar mass = .02f;
 	btVector3 localInertia(0, 0, 0);
 	startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-	boxShape->calculateLocalInertia(mass, localInertia);
+	cylShape->calculateLocalInertia(mass, localInertia);
 	btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, boxShape, localInertia);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, cylShape, localInertia);
 	btRigidBody *stoneBody = new btRigidBody(rbInfo);
 	stoneBody->setLinearVelocity(btVector3(xDir, yDir, zDir));
 	stoneBody->setAngularVelocity(btVector3((float)(rand() % 5 - 2), (float)(rand() % 5 - 2), (float)(rand() % 5 - 2)));
@@ -656,6 +710,50 @@ Ogre::Vector3 GomokuGame::getGameLookCoords() {
 	mDetailsPanel->setParamValue(13, Ogre::StringConverter::toString(angZ));
 
 	return coords;
+}
+
+void GomokuGame::setStonePhysics() {
+	std::vector<GameTile> vecStones = gBoard.getAllStones();
+	
+	for (size_t i = 0; i < vecStones.size(); i++) {
+		Ogre::SceneNode* nodeStone = mSceneMgr->getSceneNode(vecStones[i].nodeName);
+		Ogre::Vector3 pos = nodeStone->_getDerivedPosition();
+		mSceneMgr->destroyEntity(vecStones[i].entName);
+		mSceneMgr->destroySceneNode(vecStones[i].nodeName);
+
+		Ogre::Entity* entStone;
+		if (vecStones[i].color == stoneColor::BLACK) {
+			entStone = mSceneMgr->createEntity(vecStones[i].entName, "GomokuStoneBlack.mesh");
+		}
+		else {
+			entStone = mSceneMgr->createEntity(vecStones[i].entName, "GomokuStoneWhite.mesh");
+		}
+		nodeStone = mSceneMgr->getRootSceneNode()->createChildSceneNode(vecStones[i].nodeName, pos);
+		nodeStone->attachObject(entStone);
+		entStone->setCastShadows(true);
+		nodeStone->setScale(0.15f, 0.15f, 0.15f);
+
+		btCollisionShape *cylShape = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
+		physicsEngine->getCollisionShapes().push_back(cylShape);
+		btTransform startTransform;
+		startTransform.setIdentity();
+		startTransform.setRotation(btQuaternion(0, 0, 0, 1.0f));
+		btScalar mass = .02f;
+		btVector3 localInertia(0, 0, 0);
+		startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
+		cylShape->calculateLocalInertia(mass, localInertia);
+		btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, cylShape, localInertia);
+		btRigidBody *stoneBody = new btRigidBody(rbInfo);
+		stoneBody->setRestitution(0.1f);
+		stoneBody->setUserPointer(nodeStone);
+		stoneBody->setFriction(1.5);
+		physicsEngine->getDynamicsWorld()->addRigidBody(stoneBody);
+
+		numBoxes++;
+	}
+
+	tableRigidBody->applyImpulse(btVector3(0, 30, 50), btVector3(0, 0, 10));
 }
 
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR strCmdLine, INT)

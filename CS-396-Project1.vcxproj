@@ -128,7 +128,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(OGRE_HOME140)\lib\$(Configuration);$(BOOST_HOME140)\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OgreMain.lib;OIS.lib;OgreOverlay.lib;LinearMath.lib;Bullet3Dynamics.lib;Bullet3Collision.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OgreMain.lib;OIS.lib;OgreOverlay.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,22 +149,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GomokuBoard.cpp" />
     <ClCompile Include="GomokuGame.cpp" />
     <ClCompile Include="Physics.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GomokuBoard.h" />
     <ClInclude Include="GomokuGame.h" />
     <ClInclude Include="Physics.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\BulletCollision.vcxproj">
-      <Project>{e87cf928-40fb-604a-9b55-5b5ebb74218e}</Project>
+    <ProjectReference Include="..\..\..\..\..\..\..\libs\Bullet3\build3\vs2010\BulletCollision.vcxproj">
+      <Project>{a3758f4b-5b12-eb41-9d08-e267738cfe85}</Project>
     </ProjectReference>
-    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\BulletDynamics.vcxproj">
-      <Project>{eff92a7c-4f74-fb4c-ac3d-19a8ffab8baf}</Project>
+    <ProjectReference Include="..\..\..\..\..\..\..\libs\Bullet3\build3\vs2010\BulletDynamics.vcxproj">
+      <Project>{1e6b49f3-740a-fc44-8efa-c18f0ca9a3e0}</Project>
     </ProjectReference>
-    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\LinearMath.vcxproj">
-      <Project>{27fb4b66-d600-934d-8e2d-e6d48a5b4a3a}</Project>
+    <ProjectReference Include="..\..\..\..\..\..\..\libs\Bullet3\build3\vs2010\LinearMath.vcxproj">
+      <Project>{c931f571-7782-5840-823b-73de229fad74}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

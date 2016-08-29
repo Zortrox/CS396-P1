@@ -1,5 +1,4 @@
-#ifndef __GomokuGame_h_
-#define __GomokuGame_h_
+#pragma once
 
 #include <OgreCamera.h>
 #include <OgreEntity.h>
@@ -20,8 +19,9 @@
 
 #include <vector>
 #include "Physics.h"
+#include "GomokuBoard.h"
 
-enum stoneColor { NONE, BLACK, WHITE, RED};
+enum menuState {NONE, BASE, NEW_GAME};
 
 class GomokuGame : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
@@ -52,12 +52,14 @@ protected:
     virtual bool mousePressed( const OIS::MouseEvent &arg, OIS::MouseButtonID id );
     virtual bool mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id );
 
+	virtual void buttonHit(OgreBites::Button* button);
+
     virtual void windowResized(Ogre::RenderWindow* rw);
     virtual void windowClosed(Ogre::RenderWindow* rw);
 
 	virtual void shootBox();
-	virtual void createGameArea(Ogre::SceneNode* tableNode);
 	virtual Ogre::Vector3 getGameLookCoords();
+	virtual void setStonePhysics();
 
     Ogre::Root *mRoot;
     Ogre::Camera* mCamera;
@@ -67,6 +69,7 @@ protected:
     Ogre::String mPluginsCfg;
 
 	Physics* physicsEngine;
+	btRigidBody* tableRigidBody;
 
 	Ogre::OverlaySystem *mOverlaySystem;
 
@@ -76,6 +79,7 @@ protected:
    
 	OgreBites::InputContext mInputContext;
 	
+	bool mCursorMode;
 	bool mCursorWasVisible;
     bool mShutDown;
 
@@ -85,11 +89,10 @@ protected:
     OIS::Keyboard* mKeyboard;
 
 	int numBoxes;
-	std::vector<std::vector<int>> vecGameArea;
 	Ogre::Vector3 mPickCoords;
+	GomokuBoard gBoard;
 	int mBoardX;
 	int mBoardY;
 	bool mOnBoard;
+	int mMenuState;
 };
-
-#endif
