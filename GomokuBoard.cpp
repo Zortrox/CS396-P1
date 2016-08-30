@@ -68,6 +68,7 @@ bool GomokuBoard::gameWon() {
 	int iNum45 = 0;
 	int iNum90 = 0;
 	int iNum135 = 0;
+	bool bWon = false;
 
 	for (int i = 0; i < 2 * inRow - 1; i++) {
 		xCurr = xCenter - (inRow - 1) + i;
@@ -75,6 +76,7 @@ bool GomokuBoard::gameWon() {
 		if (xCurr >= 0 && xCurr <= mBoardSize - 1) {
 			if (vecGameArea[xCurr][yCurr].color == lastColor) {
 				iNum0++;
+				if (iNum0 >= inRow) bWon = true;
 			}
 			else {
 				iNum0 = 0;
@@ -86,6 +88,7 @@ bool GomokuBoard::gameWon() {
 		if (xCurr >= 0 && xCurr <= mBoardSize - 1 && yCurr >= 0 && yCurr <= mBoardSize - 1) {
 			if (vecGameArea[xCurr][yCurr].color == lastColor) {
 				iNum45++;
+				if (iNum45 >= inRow) bWon = true;
 			}
 			else {
 				iNum45 = 0;
@@ -97,6 +100,7 @@ bool GomokuBoard::gameWon() {
 		if (yCurr >= 0 && yCurr <= mBoardSize - 1) {
 			if (vecGameArea[xCurr][yCurr].color == lastColor) {
 				iNum90++;
+				if (iNum90 >= inRow) bWon = true;
 			}
 			else {
 				iNum90 = 0;
@@ -108,6 +112,7 @@ bool GomokuBoard::gameWon() {
 		if (xCurr >= 0 && xCurr <= mBoardSize - 1 && yCurr >= 0 && yCurr <= mBoardSize - 1) {
 			if (vecGameArea[xCurr][yCurr].color == lastColor) {
 				iNum135++;
+				if (iNum135 >= inRow) bWon = true;
 			}
 			else {
 				iNum135 = 0;
@@ -115,7 +120,7 @@ bool GomokuBoard::gameWon() {
 		}
 	}
 
-	if (iNum0 >= inRow || iNum45 >= inRow || iNum90 >= inRow || iNum135 >= inRow) return true;
+	if (bWon) return true;
 	else return false;
 }
 

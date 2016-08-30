@@ -477,26 +477,14 @@ break;
 	}
 	else if (arg.key == OIS::KC_ESCAPE)
 	{
-		if (mMenuState == menuState::MAIN || mMenuState == menuState::CLOSED) {
-			mCursorMode = !mCursorMode;
-
-			if (mCursorMode) {
-				mTrayMgr->showCursor();
-				mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->show();
-
-			}
-			else {
-				mTrayMgr->hideCursor();
-				mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
-			}
+		if (mMenuState == menuState::MAIN) {
+			setMenu(menuState::CLOSED);
+		}
+		else if (mMenuState == menuState::CLOSED) {
+			setMenu(menuState::MAIN);
 		}
 		else if (mMenuState == menuState::NEW_GAME) {
-			mMenuState = menuState::MAIN;
-
-			mTrayMgr->destroyWidget("buttonNewAI");
-			mTrayMgr->destroyWidget("buttonNewHum");
-			mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
-			mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
+			setMenu(menuState::MAIN);
 		}
 	}
 	else if (arg.key == OIS::KC_O) {
@@ -608,19 +596,9 @@ void GomokuGame::buttonHit(OgreBites::Button * button)
 		mShutDown = true;
 	}
 	else if (button->getName() == "buttonNew") {
-		mMenuState = menuState::NEW_GAME;
-
 		rigidTable->activate();
 		setStonePhysics();
-
-		mTrayMgr->destroyWidget("buttonNew");
-		mTrayMgr->destroyWidget("buttonQuit");
-		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAI", "vs AI");
-		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
-
-		//mCursorMode = false;
-		//mTrayMgr->hideCursor();
-		//mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+		setMenu(menuState::NEW_GAME);
 	}
 	else if (button->getName() == "buttonNewAI") {
 		resetGame();
@@ -628,6 +606,32 @@ void GomokuGame::buttonHit(OgreBites::Button * button)
 	else if (button->getName() == "buttonNewHum") {
 		resetGame();
 	}
+}
+
+void GomokuGame::setMenu(int state) {	
+	switch (state) {
+	case menuState::CLOSED:
+		mCursorMode = false;
+		mTrayMgr->hideCursor();
+		mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+		break;
+	case menuState::MAIN:
+		mCursorMode = true;
+		mTrayMgr->showCursor();
+		mTrayMgr->destroyWidget("buttonNewAI");
+		mTrayMgr->destroyWidget("buttonNewHum");
+		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
+		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
+		break;
+	case menuState::NEW_GAME:
+		mTrayMgr->destroyWidget("buttonNew");
+		mTrayMgr->destroyWidget("buttonQuit");
+		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAI", "vs AI");
+		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
+		break;
+	}
+
+	mMenuState = state;
 }
 
 //Adjust mouse clipping area
@@ -772,7 +776,6 @@ void GomokuGame::resetGame() {
 		delete vecRigidStones[i];
 		delete vecMotionStones[i];
 
-		vecEntityStones[i]->getParentSceneNode()->detachAllObjects();
 		mSceneMgr->destroyEntity(vecEntityStones[i]);
 		mSceneMgr->destroySceneNode(vecNodeStones[i]);
 	}

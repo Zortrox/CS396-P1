@@ -53,6 +53,7 @@ protected:
     virtual bool mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id );
 
 	virtual void buttonHit(OgreBites::Button* button);
+	virtual void GomokuGame::setMenu(int state);
 
     virtual void windowResized(Ogre::RenderWindow* rw);
     virtual void windowClosed(Ogre::RenderWindow* rw);
