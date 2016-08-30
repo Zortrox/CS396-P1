@@ -21,7 +21,7 @@
 #include "Physics.h"
 #include "GomokuBoard.h"
 
-enum menuState {NONE, BASE, NEW_GAME};
+enum menuState { CLOSED, MAIN, NEW_GAME};
 
 class GomokuGame : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
@@ -60,6 +60,7 @@ protected:
 	virtual void shootBox();
 	virtual Ogre::Vector3 getGameLookCoords();
 	virtual void setStonePhysics();
+	virtual void resetGame();
 
     Ogre::Root *mRoot;
     Ogre::Camera* mCamera;
@@ -67,9 +68,6 @@ protected:
     Ogre::RenderWindow* mWindow;
     Ogre::String mResourcesCfg;
     Ogre::String mPluginsCfg;
-
-	Physics* physicsEngine;
-	btRigidBody* tableRigidBody;
 
 	Ogre::OverlaySystem *mOverlaySystem;
 
@@ -87,6 +85,21 @@ protected:
     OIS::InputManager* mInputManager;
     OIS::Mouse*    mMouse;
     OIS::Keyboard* mKeyboard;
+
+	//Bullet Physics Variables
+	Physics* physicsEngine;
+	btCollisionShape* shapeTable;
+	btCollisionShape* shapeGround;
+	btCollisionShape* shapeStone;
+	btRigidBody* rigidTable;
+	btRigidBody* rigidGround;
+	std::vector<btRigidBody*> vecRigidStones;
+	btMotionState* motionTable;
+	btMotionState* motionGround;
+	std::vector<btMotionState*> vecMotionStones;
+
+	std::vector<Ogre::Entity*> vecEntityStones;
+	std::vector<Ogre::SceneNode*> vecNodeStones;
 
 	int numBoxes;
 	Ogre::Vector3 mPickCoords;

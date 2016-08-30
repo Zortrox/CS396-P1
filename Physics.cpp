@@ -19,7 +19,3 @@ void Physics::initObjects() {
 btDiscreteDynamicsWorld* Physics::getDynamicsWorld() {
 	return dynamicsWorld;
 }
-
-std::vector<btCollisionShape*> Physics::getCollisionShapes() {
-	return collisionShapes;
-}

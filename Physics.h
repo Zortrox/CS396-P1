@@ -19,6 +19,4 @@ public:
 
 	void initObjects();
 	btDiscreteDynamicsWorld* getDynamicsWorld();
-	std::vector<btCollisionShape*> getCollisionShapes();
-
 };

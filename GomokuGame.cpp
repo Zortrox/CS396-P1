@@ -27,7 +27,11 @@ GomokuGame::GomokuGame()
 	mBoardX = 0;
 	mBoardY = 0;
 	mOnBoard = false;
-	mMenuState = menuState::NONE;
+	mMenuState = menuState::CLOSED;
+
+	shapeStone = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
+	shapeTable = new btBoxShape(btVector3(2.0f, 0.18f, 2.0f));
+	shapeGround = new btBoxShape(btVector3(btScalar(15), btScalar(1), btScalar(15)));
 }
 
 //-------------------------------------------------------------------------------------
@@ -160,22 +164,19 @@ void GomokuGame::createScene(void) {
 	entTable->setCastShadows(true);
 	nodeTable->setScale(Ogre::Vector3(2, 2, 2));
 	//BULLET
-	btCollisionShape *shapeTable = new btBoxShape(btVector3(2.0f, 0.18f, 2.0f)); //btConvexTriangleMeshShape(tMeshTable);
-	physicsEngine->getCollisionShapes().push_back(shapeTable);
-	btTransform startTransform;
-	startTransform.setIdentity();
-	//startTransform.setRotation(btQuaternion(1.0f, 1.0f, 1.0f, 0));
+	btTransform transformTable;
+	transformTable.setIdentity();
 	btScalar mass = 10.0f;
 	btVector3 localInertia(0, 0, 0);
-	startTransform.setOrigin(btVector3(0, 10, 0));
+	transformTable.setOrigin(btVector3(0, 10, 0));
 	shapeTable->calculateLocalInertia(mass, localInertia);
-	btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, shapeTable, localInertia);
-	tableRigidBody = new btRigidBody(rbInfo);
-	tableRigidBody->setRestitution(1);
-	tableRigidBody->setFriction(2);
-	tableRigidBody->setUserPointer(nodeTable);
-	physicsEngine->getDynamicsWorld()->addRigidBody(tableRigidBody);
+	motionTable = new btDefaultMotionState(transformTable);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionTable, shapeTable, localInertia);
+	rigidTable = new btRigidBody(rbInfo);
+	rigidTable->setRestitution(1);
+	rigidTable->setFriction(2);
+	rigidTable->setUserPointer(nodeTable);
+	physicsEngine->getDynamicsWorld()->addRigidBody(rigidTable);
 
 	Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 	Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
@@ -186,18 +187,17 @@ void GomokuGame::createScene(void) {
 	entGround->setMaterialName("Examples/Rockwall");
 	entGround->setCastShadows(false);
 	//BULLET
-	btTransform groundTransform;
-	groundTransform.setIdentity();
-	groundTransform.setOrigin(btVector3(0, -1, 0));
-	btScalar groundMass(0);
+	btTransform transformGround;
+	transformGround.setIdentity();
+	btScalar massGround = 0;
 	btVector3 localGroundInertia(0, 0, 0);
-	btCollisionShape *groundShape = new btBoxShape(btVector3(btScalar(15), btScalar(1), btScalar(15)));
-	btDefaultMotionState *groundMotionState = new btDefaultMotionState(groundTransform);
-	groundShape->calculateLocalInertia(groundMass, localGroundInertia);
-	btRigidBody::btRigidBodyConstructionInfo groundRBInfo(groundMass, groundMotionState, groundShape, localGroundInertia);
-	btRigidBody *groundBody = new btRigidBody(groundRBInfo);
-	groundBody->setFriction(5);
-	physicsEngine->getDynamicsWorld()->addRigidBody(groundBody);
+	transformGround.setOrigin(btVector3(0, -1, 0));
+	motionGround = new btDefaultMotionState(transformGround);
+	shapeGround->calculateLocalInertia(massGround, localGroundInertia);
+	btRigidBody::btRigidBodyConstructionInfo groundRBInfo(massGround, motionGround, shapeGround, localGroundInertia);
+	rigidGround = new btRigidBody(groundRBInfo);
+	rigidGround->setFriction(5);
+	physicsEngine->getDynamicsWorld()->addRigidBody(rigidGround);
 
 	//Selector Stone
 	Ogre::SceneNode* pickNode = nodeTable->createChildSceneNode("PickNode");
@@ -477,15 +477,26 @@ break;
 	}
 	else if (arg.key == OIS::KC_ESCAPE)
 	{
-		mCursorMode = !mCursorMode;
-		if (mCursorMode) {
-			mTrayMgr->showCursor();
-			mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->show();
-			
+		if (mMenuState == menuState::MAIN || mMenuState == menuState::CLOSED) {
+			mCursorMode = !mCursorMode;
+
+			if (mCursorMode) {
+				mTrayMgr->showCursor();
+				mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->show();
+
+			}
+			else {
+				mTrayMgr->hideCursor();
+				mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+			}
 		}
-		else {
-			mTrayMgr->hideCursor();
-			mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+		else if (mMenuState == menuState::NEW_GAME) {
+			mMenuState = menuState::MAIN;
+
+			mTrayMgr->destroyWidget("buttonNewAI");
+			mTrayMgr->destroyWidget("buttonNewHum");
+			mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
+			mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
 		}
 	}
 	else if (arg.key == OIS::KC_O) {
@@ -568,6 +579,10 @@ bool GomokuGame::mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id)
 					(Ogre::Vector3((float)mBoardX * 0.086f - 0.61f, 0.1f, (float)mBoardY * 0.088f - 0.61f)));
 				stoneNode->attachObject(entStone);
 				stoneNode->setScale(0.081f, 0.081f, 0.081f);
+
+				if (gBoard.gameWon()) {
+					setStonePhysics();
+				}
 			}
 		}
 	}
@@ -593,10 +608,10 @@ void GomokuGame::buttonHit(OgreBites::Button * button)
 		mShutDown = true;
 	}
 	else if (button->getName() == "buttonNew") {
-		tableRigidBody->activate();
-		setStonePhysics();
-		
+		mMenuState = menuState::NEW_GAME;
 
+		rigidTable->activate();
+		setStonePhysics();
 
 		mTrayMgr->destroyWidget("buttonNew");
 		mTrayMgr->destroyWidget("buttonQuit");
@@ -608,14 +623,10 @@ void GomokuGame::buttonHit(OgreBites::Button * button)
 		//mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
 	}
 	else if (button->getName() == "buttonNewAI") {
-		//remove all game physics objects
-		//remove all game entities
-		//remove all game nodes
-
-		//start new game
+		resetGame();
 	}
 	else if (button->getName() == "buttonNewHum") {
-
+		resetGame();
 	}
 }
 
@@ -659,32 +670,31 @@ void GomokuGame::shootBox() {
 	std::string strNum = std::to_string(numBoxes);
 
 	Ogre::Entity* entStone;
-
 	if (rand() % 2 == 0) {
 		entStone = mSceneMgr->createEntity("Stone_" + strNum, "GomokuStoneBlack.mesh");
 	}
 	else {
 		entStone = mSceneMgr->createEntity("Stone_" + strNum, "GomokuStoneWhite.mesh");
 	}
-
 	Ogre::SceneNode* nodeStone = mSceneMgr->getRootSceneNode()->createChildSceneNode(pos);
 	nodeStone->attachObject(entStone);
 	entStone->setCastShadows(true);
 	nodeStone->setScale(0.15f, 0.15f, 0.15f);
+	vecEntityStones.push_back(entStone);
+	vecNodeStones.push_back(nodeStone);
 
 	//BULLET
-	btCollisionShape *cylShape = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
-	physicsEngine->getCollisionShapes().push_back(cylShape);
 	btTransform startTransform;
 	startTransform.setIdentity();
-	startTransform.setRotation(btQuaternion(0, 0, 0, 1.0f));
 	btScalar mass = .02f;
 	btVector3 localInertia(0, 0, 0);
 	startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-	cylShape->calculateLocalInertia(mass, localInertia);
-	btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, cylShape, localInertia);
+	shapeStone->calculateLocalInertia(mass, localInertia);
+	btDefaultMotionState* motionStone = new btDefaultMotionState(startTransform);
+	vecMotionStones.push_back(motionStone);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionStone, shapeStone, localInertia);
 	btRigidBody *stoneBody = new btRigidBody(rbInfo);
+	vecRigidStones.push_back(stoneBody);
 	stoneBody->setLinearVelocity(btVector3(xDir, yDir, zDir));
 	stoneBody->setAngularVelocity(btVector3((float)(rand() % 5 - 2), (float)(rand() % 5 - 2), (float)(rand() % 5 - 2)));
 	stoneBody->setRestitution(0.1f);
@@ -732,28 +742,58 @@ void GomokuGame::setStonePhysics() {
 		nodeStone->attachObject(entStone);
 		entStone->setCastShadows(true);
 		nodeStone->setScale(0.15f, 0.15f, 0.15f);
+		vecEntityStones.push_back(entStone);
+		vecNodeStones.push_back(nodeStone);
 
-		btCollisionShape *cylShape = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
-		physicsEngine->getCollisionShapes().push_back(cylShape);
 		btTransform startTransform;
 		startTransform.setIdentity();
-		startTransform.setRotation(btQuaternion(0, 0, 0, 1.0f));
 		btScalar mass = .02f;
 		btVector3 localInertia(0, 0, 0);
 		startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-		cylShape->calculateLocalInertia(mass, localInertia);
-		btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, cylShape, localInertia);
+		shapeStone->calculateLocalInertia(mass, localInertia);
+		btDefaultMotionState* motionStone = new btDefaultMotionState(startTransform);
+		vecMotionStones.push_back(motionStone);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionStone, shapeStone, localInertia);
 		btRigidBody *stoneBody = new btRigidBody(rbInfo);
+		vecRigidStones.push_back(stoneBody);
 		stoneBody->setRestitution(0.1f);
 		stoneBody->setUserPointer(nodeStone);
 		stoneBody->setFriction(1.5);
 		physicsEngine->getDynamicsWorld()->addRigidBody(stoneBody);
-
-		numBoxes++;
 	}
 
-	tableRigidBody->applyImpulse(btVector3(0, 30, 50), btVector3(0, 0, 10));
+	rigidTable->applyImpulse(btVector3(0, 30, 50), btVector3(0, 0, 10));
+}
+
+void GomokuGame::resetGame() {
+	//remove stone physics, entities, and nodes
+	for (size_t i = 0; i < vecRigidStones.size(); i++) {
+		physicsEngine->getDynamicsWorld()->removeRigidBody(vecRigidStones[i]);
+		delete vecRigidStones[i];
+		delete vecMotionStones[i];
+
+		vecEntityStones[i]->getParentSceneNode()->detachAllObjects();
+		mSceneMgr->destroyEntity(vecEntityStones[i]);
+		mSceneMgr->destroySceneNode(vecNodeStones[i]);
+	}
+	vecRigidStones.clear();
+	vecMotionStones.clear();
+	vecEntityStones.clear();
+	vecNodeStones.clear();
+
+	//clear board grid
+	gBoard.clearBoard();
+
+	//set board back to starting position and reset its motion
+	btTransform initialTransform;
+	initialTransform.setOrigin(btVector3(0, 10, 0));
+	initialTransform.setRotation(btQuaternion(0, 0, 0, 1));
+	rigidTable->clearForces();
+	rigidTable->setLinearVelocity(btVector3(0, 0, 0));
+	rigidTable->setAngularVelocity(btVector3(0, 0, 0));
+	rigidTable->setWorldTransform(initialTransform);
+	motionTable->setWorldTransform(initialTransform);
+	rigidTable->activate();
 }
 
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR strCmdLine, INT)

@@ -2,9 +2,12 @@
 
 GomokuBoard::GomokuBoard()
 {
-	vecGameArea.resize(15);
+	mLastTile = NULL;
+	mBoardSize = 15;
+
+	vecGameArea.resize(mBoardSize);
 	for (size_t i = 0; i < vecGameArea.size(); i++) {
-		vecGameArea[i].resize(15);
+		vecGameArea[i].resize(mBoardSize);
 	}
 }
 
@@ -17,9 +20,13 @@ Returns whether a stone was created*/
 bool GomokuBoard::addStone(int xPos, int yPos, int color, std::string entName, std::string nodeName)
 {
 	if (emptyTile(xPos, yPos)) {
-		vecGameArea[xPos][yPos].color = color;
-		vecGameArea[xPos][yPos].entName = entName;
-		vecGameArea[xPos][yPos].nodeName = nodeName;
+		mLastTile = &vecGameArea[xPos][yPos];
+
+		mLastTile->color = color;
+		mLastTile->entName = entName;
+		mLastTile->nodeName = nodeName;
+		mLastTile->xGrid = xPos;
+		mLastTile->yGrid = yPos;
 
 		return true;
 	}
@@ -49,12 +56,76 @@ std::vector<GameTile> GomokuBoard::getAllStones()
 	return vecStones;
 }
 
+bool GomokuBoard::gameWon() {
+	int inRow = 5;		//number in row to win
+	int xCenter = mLastTile->xGrid;
+	int yCenter = mLastTile->yGrid;
+	int lastColor = mLastTile->color;
+	int xCurr = 0;
+	int yCurr = 0;
+
+	int iNum0 = 0;
+	int iNum45 = 0;
+	int iNum90 = 0;
+	int iNum135 = 0;
+
+	for (int i = 0; i < 2 * inRow - 1; i++) {
+		xCurr = xCenter - (inRow - 1) + i;
+		yCurr = yCenter;
+		if (xCurr >= 0 && xCurr <= mBoardSize - 1) {
+			if (vecGameArea[xCurr][yCurr].color == lastColor) {
+				iNum0++;
+			}
+			else {
+				iNum0 = 0;
+			}
+		}
+
+		xCurr = xCenter - (inRow - 1) + i;
+		yCurr = yCenter + (inRow - 1) - i;
+		if (xCurr >= 0 && xCurr <= mBoardSize - 1 && yCurr >= 0 && yCurr <= mBoardSize - 1) {
+			if (vecGameArea[xCurr][yCurr].color == lastColor) {
+				iNum45++;
+			}
+			else {
+				iNum45 = 0;
+			}
+		}
+
+		xCurr = xCenter;
+		yCurr = yCenter + (inRow - 1) - i;
+		if (yCurr >= 0 && yCurr <= mBoardSize - 1) {
+			if (vecGameArea[xCurr][yCurr].color == lastColor) {
+				iNum90++;
+			}
+			else {
+				iNum90 = 0;
+			}
+		}
+
+		xCurr = xCenter + (inRow - 1) - i;
+		yCurr = yCenter + (inRow - 1) - i;
+		if (xCurr >= 0 && xCurr <= mBoardSize - 1 && yCurr >= 0 && yCurr <= mBoardSize - 1) {
+			if (vecGameArea[xCurr][yCurr].color == lastColor) {
+				iNum135++;
+			}
+			else {
+				iNum135 = 0;
+			}
+		}
+	}
+
+	if (iNum0 >= inRow || iNum45 >= inRow || iNum90 >= inRow || iNum135 >= inRow) return true;
+	else return false;
+}
+
 void GomokuBoard::clearBoard()
 {
-	vecGameArea.clear();
+	mLastTile = NULL;
 
-	vecGameArea.resize(15);
+	vecGameArea.clear();
+	vecGameArea.resize(mBoardSize);
 	for (size_t i = 0; i < vecGameArea.size(); i++) {
-		vecGameArea[i].resize(15);
+		vecGameArea[i].resize(mBoardSize);
 	}
 }

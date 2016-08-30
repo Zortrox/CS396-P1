@@ -10,6 +10,8 @@ struct GameTile {
 	int color;
 	std::string entName;
 	std::string nodeName;
+	int xGrid;
+	int yGrid;
 };
 
 class GomokuBoard {
@@ -21,8 +23,11 @@ public:
 	GameTile getStone(int xPos, int yPos);
 	bool emptyTile(int xPos, int yPos);
 	std::vector<GameTile> getAllStones();
+	bool gameWon();
 	void clearBoard();
 
 private:
 	std::vector<std::vector<GameTile>> vecGameArea;
+	GameTile* mLastTile;
+	int mBoardSize;
 };
