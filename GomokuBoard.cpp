@@ -43,6 +43,11 @@ bool GomokuBoard::emptyTile(int xPos, int yPos)
 	return vecGameArea[xPos][yPos].color == stoneColor::NONE;
 }
 
+int GomokuBoard::getBoardSize()
+{
+	return mBoardSize;
+}
+
 std::vector<GameTile> GomokuBoard::getAllStones()
 {
 	std::vector<GameTile> vecStones;

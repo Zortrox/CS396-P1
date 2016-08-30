@@ -28,10 +28,7 @@ GomokuGame::GomokuGame()
 	mBoardY = 0;
 	mOnBoard = false;
 	mMenuState = menuState::CLOSED;
-
-	shapeStone = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
-	shapeTable = new btBoxShape(btVector3(2.0f, 0.18f, 2.0f));
-	shapeGround = new btBoxShape(btVector3(btScalar(15), btScalar(1), btScalar(15)));
+	bGameOver = false;
 }
 
 //-------------------------------------------------------------------------------------
@@ -140,9 +137,13 @@ void GomokuGame::createFrameListener(void)
     mDetailsPanel->setParamValue(10, "Solid");
     mDetailsPanel->hide();
 
-	mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
-	mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
-	mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
+	vecMenuButtons.resize(menuButtons::TOTAL);
+	vecMenuButtons[menuButtons::B_NEW] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
+	vecMenuButtons[menuButtons::B_QUIT] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
+	vecMenuButtons[menuButtons::B_RESUME] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonResume", "Resume");
+	vecMenuButtons[menuButtons::B_VSAI] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAI", "vs AI");
+	vecMenuButtons[menuButtons::B_VSHUM] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
+	setMenu(menuState::CLOSED);
 
     mRoot->addFrameListener(this);
 }
@@ -158,6 +159,9 @@ void GomokuGame::createScene(void) {
 	nodeRobot->setScale(Ogre::Vector3(.05f, .05f, .05f));
 	nodeRobot->rotate(Ogre::Vector3::UNIT_Y, Ogre::Radian(-3.14f / 2.0f));
 
+	//BULLET
+	shapeStone = new btCylinderShape(btVector3(0.075f, 0.025f, 0.075f));
+
 	Ogre::Entity* entTable = mSceneMgr->createEntity("GomokuTable", "GomokuTable.mesh");
 	Ogre::SceneNode* nodeTable = mSceneMgr->getRootSceneNode()->createChildSceneNode("GomokuTable", Ogre::Vector3(0, 10, 0));
 	nodeTable->attachObject(entTable);
@@ -168,6 +172,7 @@ void GomokuGame::createScene(void) {
 	transformTable.setIdentity();
 	btScalar mass = 10.0f;
 	btVector3 localInertia(0, 0, 0);
+	shapeTable = new btBoxShape(btVector3(2.0f, 0.18f, 2.0f));
 	transformTable.setOrigin(btVector3(0, 10, 0));
 	shapeTable->calculateLocalInertia(mass, localInertia);
 	motionTable = new btDefaultMotionState(transformTable);
@@ -180,7 +185,7 @@ void GomokuGame::createScene(void) {
 
 	Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 	Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		plane, 15, 15, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
+		plane, 30, 30, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
 	Ogre::Entity* entGround = mSceneMgr->createEntity("GroundEntity", "ground");
 	Ogre::SceneNode* nodeGround = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 	nodeGround->attachObject(entGround);
@@ -191,6 +196,7 @@ void GomokuGame::createScene(void) {
 	transformGround.setIdentity();
 	btScalar massGround = 0;
 	btVector3 localGroundInertia(0, 0, 0);
+	shapeGround = new btBoxShape(btVector3(btScalar(30), btScalar(1), btScalar(30)));
 	transformGround.setOrigin(btVector3(0, -1, 0));
 	motionGround = new btDefaultMotionState(transformGround);
 	shapeGround->calculateLocalInertia(massGround, localGroundInertia);
@@ -206,14 +212,23 @@ void GomokuGame::createScene(void) {
 	pickNode->setScale(0.081f, 0.081f, 0.081f);
 
 	//LIGHTS
-	Ogre::Light* directionalLight = mSceneMgr->createLight("directionalLight");
-	directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
-	directionalLight->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
-	directionalLight->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
-	directionalLight->setDirection(Ogre::Vector3(0.7f, -1, 0.5f));
+	//Ogre::Light* directionalLight = mSceneMgr->createLight("directionalLight");
+	//directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
+	//directionalLight->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+	//directionalLight->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+	//directionalLight->setDirection(Ogre::Vector3(0.7f, -1, -0.5f));
 
-	//ambient light (brighten it up a little)
-	mSceneMgr->setAmbientLight(Ogre::ColourValue(0.5, 0.5, 0.5));
+	Ogre::Light* spotLight = mSceneMgr->createLight("spotLight");
+	spotLight->setType(Ogre::Light::LT_SPOTLIGHT);
+	spotLight->setDiffuseColour(1, 1, 1);
+	spotLight->setSpecularColour(0.5, 0.5, 0.5);
+	spotLight->setDirection(0, -1, 0);
+	spotLight->setPosition(Ogre::Vector3(0, 50, 0));
+	spotLight->setSpotlightRange(Ogre::Degree(35), Ogre::Degree(50));
+
+	//ambient light (darkness)
+	mSceneMgr->setAmbientLight(Ogre::ColourValue(0, 0, 0));
+	mSceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
 }
 //-------------------------------------------------------------------------------------
 void GomokuGame::destroyScene(void)
@@ -488,8 +503,9 @@ break;
 		}
 	}
 	else if (arg.key == OIS::KC_O) {
-		for (int i = 0; i < 15; i++) {
-			for (int j = 0; j < 15; j++) {
+		int size = gBoard.getBoardSize();
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
 				std::string stre = "fill" + std::to_string(i) + "_" + std::to_string(j);
 				std::string strn = "fillNode" + std::to_string(i) + "_" + std::to_string(j);
 				int color = rand() % 2 + 1;
@@ -512,27 +528,35 @@ break;
 		}
 	}
 
-	mCameraMan->injectKeyDown(arg);
+	//mCameraMan->injectKeyDown(arg);
 	return true;
 }
 
 bool GomokuGame::keyReleased(const OIS::KeyEvent &arg)
 {
-	mCameraMan->injectKeyUp(arg);
+	//mCameraMan->injectKeyUp(arg);
 	return true;
 }
 
 bool GomokuGame::mouseMoved(const OIS::MouseEvent &arg)
 {
 	mPickCoords = getGameLookCoords();
-	float pX = floor((mPickCoords.x + .6501f) / 1.203f * 14);
+	int size = gBoard.getBoardSize();
+	float pX = floor((mPickCoords.x + .6501f) / 1.203f * (size - 1));
 	float pY = mPickCoords.y;
-	float pZ = floor((mPickCoords.z + .651f) / 1.232f * 14);
+	float pZ = floor((mPickCoords.z + .651f) / 1.232f * (size - 1));
 	mBoardX = pX;
 	mBoardY = pZ;
 
+	//gives some buffer to game board edges
+	int bufferSize = 5;
+	if (mBoardX < 0 && mBoardX >= -bufferSize) mBoardX = 0;
+	if (mBoardX > (size - 1) && mBoardX <= (size - 1) + bufferSize) mBoardX = size - 1;
+	if (mBoardY < 0 && mBoardY >= -bufferSize) mBoardY = 0;
+	if (mBoardY > (size - 1) && mBoardY <= (size - 1) + bufferSize) mBoardY = size - 1;
+
 	//hide the cursor if not looking at the board
-	if (mBoardX < 0 || mBoardX > 14 || mBoardY < 0 || mBoardY > 14) {
+	if (mBoardX < 0 || mBoardX > size - 1 || mBoardY < 0 || mBoardY > size - 1) {
 		mOnBoard = false;
 	}
 	else {
@@ -568,7 +592,8 @@ bool GomokuGame::mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id)
 				stoneNode->attachObject(entStone);
 				stoneNode->setScale(0.081f, 0.081f, 0.081f);
 
-				if (gBoard.gameWon()) {
+				if (gBoard.gameWon() && !bGameOver) {
+					bGameOver = true;
 					setStonePhysics();
 				}
 			}
@@ -595,20 +620,30 @@ void GomokuGame::buttonHit(OgreBites::Button * button)
 	if (button->getName() == "buttonQuit") {
 		mShutDown = true;
 	}
+	else if (button->getName() == "buttonResume") {
+		setMenu(menuState::CLOSED);
+	}
 	else if (button->getName() == "buttonNew") {
-		rigidTable->activate();
-		setStonePhysics();
+		if (!bGameOver) {
+			bGameOver = true;
+			rigidTable->activate();
+			setStonePhysics();
+		}
 		setMenu(menuState::NEW_GAME);
 	}
 	else if (button->getName() == "buttonNewAI") {
 		resetGame();
+		setMenu(menuState::CLOSED);
 	}
 	else if (button->getName() == "buttonNewHum") {
 		resetGame();
+		setMenu(menuState::CLOSED);
 	}
 }
 
-void GomokuGame::setMenu(int state) {	
+void GomokuGame::setMenu(int state) {
+	removeAllMenuItems(mTrayMgr->getTrayContainer(OgreBites::TL_CENTER));
+
 	switch (state) {
 	case menuState::CLOSED:
 		mCursorMode = false;
@@ -616,21 +651,27 @@ void GomokuGame::setMenu(int state) {
 		mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->hide();
 		break;
 	case menuState::MAIN:
-		mCursorMode = true;
-		mTrayMgr->showCursor();
-		mTrayMgr->destroyWidget("buttonNewAI");
-		mTrayMgr->destroyWidget("buttonNewHum");
-		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
-		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
+		if (mMenuState == menuState::CLOSED) {	//if menu was previously closed
+			mCursorMode = true;
+			mTrayMgr->showCursor();
+			mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->show();
+		}
+		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_RESUME]->getName(), OgreBites::TL_CENTER);
+		vecMenuButtons[menuButtons::B_RESUME]->show();
+		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_NEW]->getName(), OgreBites::TL_CENTER);
+		vecMenuButtons[menuButtons::B_NEW]->show();
+		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_QUIT]->getName(), OgreBites::TL_CENTER);
+		vecMenuButtons[menuButtons::B_QUIT]->show();
 		break;
 	case menuState::NEW_GAME:
-		mTrayMgr->destroyWidget("buttonNew");
-		mTrayMgr->destroyWidget("buttonQuit");
-		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAI", "vs AI");
-		mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
+		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_VSAI]->getName(), OgreBites::TL_CENTER);
+		vecMenuButtons[menuButtons::B_VSAI]->show();
+		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_VSHUM]->getName(), OgreBites::TL_CENTER);
+		vecMenuButtons[menuButtons::B_VSHUM]->show();
 		break;
 	}
 
+	//set current menu state
 	mMenuState = state;
 }
 
@@ -712,16 +753,17 @@ void GomokuGame::shootBox() {
 Ogre::Vector3 GomokuGame::getGameLookCoords() {
 	Ogre::Vector3 dir = mCamera->getDirection();
 	Ogre::Vector3 pos = mCamera->getPosition();
-	float angX = Ogre::Vector3::NEGATIVE_UNIT_Y.angleBetween(Ogre::Vector3(dir.x, dir.y, 0)).valueRadians();
-	float angZ = Ogre::Vector3::NEGATIVE_UNIT_Y.angleBetween(Ogre::Vector3(0, dir.y, dir.z)).valueRadians();
-
-	Ogre::Real offsetX = (pos.y - 0.1f) * tan(angX) * (dir.x < 0 ? -1 : 1);
-	Ogre::Real offsetZ = (pos.y - 0.1f) * tan(angZ) * (dir.z < 0 ? -1 : 1);
+	float baseAngle = Ogre::Vector3::UNIT_X.angleBetween(Ogre::Vector3(dir.x, 0, dir.z)).valueRadians();
+	float baseDist = Ogre::Vector3::NEGATIVE_UNIT_Y.distance(dir);
+	baseDist = baseDist * pos.y;
+	
+	Ogre::Real offsetX = baseDist * cos(baseAngle);
+	Ogre::Real offsetZ = baseDist * -sin(baseAngle);
 
 	Ogre::Vector3 coords = Ogre::Vector3(offsetX + pos.x, 0.1f, offsetZ + pos.z);
 
-	mDetailsPanel->setParamValue(12, Ogre::StringConverter::toString(angX));
-	mDetailsPanel->setParamValue(13, Ogre::StringConverter::toString(angZ));
+	mDetailsPanel->setParamValue(12, Ogre::StringConverter::toString(coords.x));
+	mDetailsPanel->setParamValue(13, Ogre::StringConverter::toString(coords.z));
 
 	return coords;
 }
@@ -786,6 +828,7 @@ void GomokuGame::resetGame() {
 
 	//clear board grid
 	gBoard.clearBoard();
+	bGameOver = false;
 
 	//set board back to starting position and reset its motion
 	btTransform initialTransform;
@@ -797,6 +840,14 @@ void GomokuGame::resetGame() {
 	rigidTable->setWorldTransform(initialTransform);
 	motionTable->setWorldTransform(initialTransform);
 	rigidTable->activate();
+}
+
+void GomokuGame::removeAllMenuItems(Ogre::OverlayContainer * menuContainer)
+{
+	for (size_t i = 0; i < vecMenuButtons.size(); i++) {
+		mTrayMgr->removeWidgetFromTray(vecMenuButtons[i]->getName());
+		vecMenuButtons[i]->hide();
+	}
 }
 
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR strCmdLine, INT)

@@ -21,7 +21,8 @@
 #include "Physics.h"
 #include "GomokuBoard.h"
 
-enum menuState { CLOSED, MAIN, NEW_GAME};
+enum menuState { CLOSED, MAIN, NEW_GAME };
+enum menuButtons { B_QUIT, B_NEW, B_RESUME, B_VSAI, B_VSHUM, TOTAL};
 
 class GomokuGame : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
@@ -62,6 +63,7 @@ protected:
 	virtual Ogre::Vector3 getGameLookCoords();
 	virtual void setStonePhysics();
 	virtual void resetGame();
+	virtual void removeAllMenuItems(Ogre::OverlayContainer* menuContainer);
 
     Ogre::Root *mRoot;
     Ogre::Camera* mCamera;
@@ -75,6 +77,7 @@ protected:
     OgreBites::SdkTrayManager* mTrayMgr;
     OgreBites::SdkCameraMan* mCameraMan;
     OgreBites::ParamsPanel* mDetailsPanel;
+	std::vector<OgreBites::Button*> vecMenuButtons;
    
 	OgreBites::InputContext mInputContext;
 	
@@ -109,4 +112,5 @@ protected:
 	int mBoardY;
 	bool mOnBoard;
 	int mMenuState;
+	bool bGameOver;
 };
