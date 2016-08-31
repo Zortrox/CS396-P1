@@ -187,7 +187,7 @@ void GomokuGame::createScene(void) {
 
 	Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 	Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		plane, 30, 30, 20, 20, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
+		plane, 60, 60, 10, 10, true, 1, 10, 10, Ogre::Vector3::UNIT_Z);
 	Ogre::Entity* entGround = mSceneMgr->createEntity("GroundEntity", "ground");
 	Ogre::SceneNode* nodeGround = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 	nodeGround->attachObject(entGround);
@@ -198,7 +198,7 @@ void GomokuGame::createScene(void) {
 	transformGround.setIdentity();
 	btScalar massGround = 0;
 	btVector3 localGroundInertia(0, 0, 0);
-	shapeGround = new btBoxShape(btVector3(btScalar(30), btScalar(1), btScalar(30)));
+	shapeGround = new btBoxShape(btVector3(btScalar(60), btScalar(1), btScalar(60)));
 	transformGround.setOrigin(btVector3(0, -1, 0));
 	motionGround = new btDefaultMotionState(transformGround);
 	shapeGround->calculateLocalInertia(massGround, localGroundInertia);
@@ -214,23 +214,18 @@ void GomokuGame::createScene(void) {
 	pickNode->setScale(0.081f, 0.081f, 0.081f);
 
 	//LIGHTS
-	//Ogre::Light* directionalLight = mSceneMgr->createLight("directionalLight");
-	//directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
-	//directionalLight->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
-	//directionalLight->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
-	//directionalLight->setDirection(Ogre::Vector3(0.7f, -1, -0.5f));
-
-	Ogre::Light* spotLight = mSceneMgr->createLight("spotLight");
-	spotLight->setType(Ogre::Light::LT_SPOTLIGHT);
-	spotLight->setDiffuseColour(1, 1, 1);
-	spotLight->setSpecularColour(0.5, 0.5, 0.5);
-	spotLight->setDirection(0, -1, 0);
-	spotLight->setPosition(Ogre::Vector3(0, 50, 0));
-	spotLight->setSpotlightRange(Ogre::Degree(35), Ogre::Degree(50));
+	Ogre::Light* directionalLight = mSceneMgr->createLight("directionalLight");
+	directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
+	directionalLight->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+	directionalLight->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+	directionalLight->setDirection(Ogre::Vector3(0, -1, -0.3f));
 
 	//ambient light (darkness)
-	mSceneMgr->setAmbientLight(Ogre::ColourValue(0, 0, 0));
-	mSceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
+	mSceneMgr->setAmbientLight(Ogre::ColourValue(.3f, .3f, .3f));
+
+	//fog
+	mWindow->getViewport(0)->setBackgroundColour(Ogre::ColourValue(0, 0, 0));
+	mSceneMgr->setFog(Ogre::FOG_EXP2, Ogre::ColourValue(0, 0, 0), 0.1f);
 }
 //-------------------------------------------------------------------------------------
 void GomokuGame::destroyScene(void)
@@ -666,6 +661,11 @@ void GomokuGame::setMenu(int state) {
 		vecMenuButtons[menuButtons::B_QUIT]->show();
 		break;
 	case menuState::NEW_GAME:
+		if (mMenuState == menuState::CLOSED) {	//if menu was previously closed
+			mCursorMode = true;
+			mTrayMgr->showCursor();
+			mTrayMgr->getTrayContainer(OgreBites::TL_CENTER)->show();
+		}
 		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_VSAI]->getName(), OgreBites::TL_CENTER);
 		vecMenuButtons[menuButtons::B_VSAI]->show();
 		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_VSHUM]->getName(), OgreBites::TL_CENTER);
