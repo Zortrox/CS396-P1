@@ -29,6 +29,8 @@ GomokuGame::GomokuGame()
 	mOnBoard = false;
 	mMenuState = menuState::CLOSED;
 	bGameOver = false;
+	bGameVSAI = false;
+	playerTurn = 0;
 }
 
 //-------------------------------------------------------------------------------------
@@ -143,7 +145,7 @@ void GomokuGame::createFrameListener(void)
 	vecMenuButtons[menuButtons::B_RESUME] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonResume", "Resume");
 	vecMenuButtons[menuButtons::B_VSAI] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAI", "vs AI");
 	vecMenuButtons[menuButtons::B_VSHUM] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
-	setMenu(menuState::CLOSED);
+	setMenu(menuState::NEW_GAME);
 
     mRoot->addFrameListener(this);
 }

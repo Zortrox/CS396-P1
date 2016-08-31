@@ -113,4 +113,6 @@ protected:
 	bool mOnBoard;
 	int mMenuState;
 	bool bGameOver;
+	bool bGameVSAI;
+	bool playerTurn;
 };
