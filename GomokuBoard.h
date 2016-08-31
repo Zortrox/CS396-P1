@@ -24,6 +24,7 @@ public:
 	bool emptyTile(int xPos, int yPos);
 	int getBoardSize();
 	std::vector<GameTile> getAllStones();
+	std::vector< std::vector<GameTile> > getGameArea();
 	bool gameWon();
 	void clearBoard();
 

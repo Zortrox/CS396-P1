@@ -30,7 +30,8 @@ GomokuGame::GomokuGame()
 	mMenuState = menuState::CLOSED;
 	bGameOver = false;
 	bGameVSAI = false;
-	playerTurn = 0;
+	turnColor = stoneColor::BLACK;
+	playerAI.setColor(stoneColor::WHITE);
 }
 
 //-------------------------------------------------------------------------------------
@@ -55,7 +56,7 @@ bool GomokuGame::configure(void)
     {
         // If returned true, user clicked OK so initialise
         // Here we choose to let the system create a default rendering window by passing 'true'
-        mWindow = mRoot->initialise(true, "TutorialApplication Render Window");
+        mWindow = mRoot->initialise(true, "SANJIGEN ROBOTTO GOMOKUNARABE");
 
         return true;
     }
@@ -147,6 +148,11 @@ void GomokuGame::createFrameListener(void)
 	vecMenuButtons[menuButtons::B_VSHUM] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
 	setMenu(menuState::NEW_GAME);
 
+	labelPlayer1 = mTrayMgr->createLabel(OgreBites::TL_TOP, "labelPlayer1", "Player 1 : (BLACK)", 200);
+	labelPlayer2 = mTrayMgr->createLabel(OgreBites::TL_TOP, "labelPlayer2", "Player 2 : (WHITE)", 200);
+	labelPlayer2->hide();
+	mTrayMgr->removeWidgetFromTray(labelPlayer2);
+
     mRoot->addFrameListener(this);
 }
 //-----------------------------------------------------------------------------
@@ -184,6 +190,8 @@ void GomokuGame::createScene(void) {
 	rigidTable->setFriction(2);
 	rigidTable->setUserPointer(nodeTable);
 	physicsEngine->getDynamicsWorld()->addRigidBody(rigidTable);
+	//stop until new game started
+	rigidTable->setActivationState(0);
 
 	Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 	Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
@@ -500,6 +508,7 @@ break;
 		}
 	}
 	else if (arg.key == OIS::KC_O) {
+		/*
 		int size = gBoard.getBoardSize();
 		for (int i = 0; i < size; i++) {
 			for (int j = 0; j < size; j++) {
@@ -522,7 +531,7 @@ break;
 					stoneNode->setScale(0.081f, 0.081f, 0.081f);
 				}
 			}
-		}
+		}*/
 	}
 
 	//mCameraMan->injectKeyDown(arg);
@@ -541,7 +550,7 @@ bool GomokuGame::mouseMoved(const OIS::MouseEvent &arg)
 	int size = gBoard.getBoardSize();
 	float pX = floor((mPickCoords.x + .6501f) / 1.203f * (size - 1));
 	float pY = mPickCoords.y;
-	float pZ = floor((mPickCoords.z + .651f) / 1.232f * (size - 1));
+	float pZ = floor((mPickCoords.z + .6501f) / 1.203f * (size - 1));
 	mBoardX = pX;
 	mBoardY = pZ;
 
@@ -560,7 +569,7 @@ bool GomokuGame::mouseMoved(const OIS::MouseEvent &arg)
 		mOnBoard = true;
 	}
 
-	mPickCoords = Ogre::Vector3(mBoardX * 0.086f - 0.61f, pY, mBoardY * 0.088f - 0.61f);
+	mPickCoords = Ogre::Vector3(mBoardX * 0.086f - 0.61f, pY, mBoardY * 0.086f - 0.61f);
 
 	Ogre::SceneNode* pickNode = mSceneMgr->getSceneNode("PickNode");
 	pickNode->setPosition(mPickCoords);
@@ -573,31 +582,13 @@ bool GomokuGame::mouseMoved(const OIS::MouseEvent &arg)
 bool GomokuGame::mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id)
 {
 	if (id == OIS::MB_Left) {
-		if (mOnBoard && !mCursorMode) {
-			//create stone names
-			std::string strNum = std::to_string(mBoardX) + "_" + std::to_string(mBoardY);
-			std::string strEntity = "entStone_" + strNum;
-			std::string strNode = "nodeStone_" + strNum;
-
-			//place stone at location if not already one there
-			if (gBoard.addStone(mBoardX, mBoardY, stoneColor::BLACK, strEntity, strNode)) {
-				
-				Ogre::Entity* entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneBlack.mesh");
-				Ogre::SceneNode* tableNode = mSceneMgr->getSceneNode("GomokuTable");
-				Ogre::SceneNode* stoneNode = tableNode->createChildSceneNode(strNode,
-					(Ogre::Vector3((float)mBoardX * 0.086f - 0.61f, 0.1f, (float)mBoardY * 0.088f - 0.61f)));
-				stoneNode->attachObject(entStone);
-				stoneNode->setScale(0.081f, 0.081f, 0.081f);
-
-				if (gBoard.gameWon() && !bGameOver) {
-					bGameOver = true;
-					setStonePhysics();
-				}
-			}
+		if (mOnBoard && !mCursorMode && !bGameOver) {
+			//add stone if able to
+			addStoneToBoard(mBoardX, mBoardY);
 		}
 	}
 	else if (id == OIS::MB_Right) {
-		shootBox();
+		//shootBox();
 	}
 
     if (mCursorMode && mTrayMgr->injectMouseDown(arg, id)) return true;
@@ -630,10 +621,12 @@ void GomokuGame::buttonHit(OgreBites::Button * button)
 	}
 	else if (button->getName() == "buttonNewAI") {
 		resetGame();
+		bGameVSAI = true;
 		setMenu(menuState::CLOSED);
 	}
 	else if (button->getName() == "buttonNewHum") {
 		resetGame();
+		bGameVSAI = false;
 		setMenu(menuState::CLOSED);
 	}
 }
@@ -675,6 +668,24 @@ void GomokuGame::setMenu(int state) {
 
 	//set current menu state
 	mMenuState = state;
+}
+
+void GomokuGame::setPlayerLabel(bool reset)
+{
+	if (turnColor == stoneColor::WHITE || reset) {
+		turnColor = stoneColor::BLACK;
+		mTrayMgr->moveWidgetToTray(labelPlayer1, OgreBites::TL_TOP);
+		labelPlayer1->show();
+		mTrayMgr->removeWidgetFromTray(labelPlayer2);
+		labelPlayer2->hide();
+	}
+	else if (turnColor == stoneColor::BLACK) {
+		turnColor = stoneColor::WHITE;
+		mTrayMgr->moveWidgetToTray(labelPlayer2, OgreBites::TL_TOP);
+		labelPlayer2->show();
+		mTrayMgr->removeWidgetFromTray(labelPlayer1);
+		labelPlayer1->hide();
+	}
 }
 
 //Adjust mouse clipping area
@@ -813,6 +824,63 @@ void GomokuGame::setStonePhysics() {
 	rigidTable->applyImpulse(btVector3(0, 30, 50), btVector3(0, 0, 10));
 }
 
+bool GomokuGame::addStoneToBoard(int xGrid, int yGrid)
+{
+	//create stone names
+	std::string strNum = std::to_string(xGrid) + "_" + std::to_string(yGrid);
+	std::string strEntity = "entStone_" + strNum;
+	std::string strNode = "nodeStone_" + strNum;
+
+	//place stone at location if not already one there
+	if (gBoard.addStone(xGrid, yGrid, turnColor, strEntity, strNode)) {
+		addStoneGraphics(strEntity, strNode, xGrid, yGrid);
+
+		//end game if won, otherwise switch players
+		if (gBoard.gameWon() && !bGameOver) {
+			bGameOver = true;
+			setStonePhysics();
+		}
+		else {
+			nextTurn();
+		}
+
+		return true;
+	}
+	else return false;
+}
+
+void GomokuGame::addStoneGraphics(std::string strEntity, std::string strNode, int xGrid, int yGrid)
+{
+	Ogre::Entity* entStone;
+	if (turnColor == stoneColor::BLACK) {
+		entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneBlack.mesh");
+	}
+	else if (turnColor = stoneColor::WHITE) {
+		entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneWhite.mesh");
+	}
+	
+	Ogre::SceneNode* tableNode = mSceneMgr->getSceneNode("GomokuTable");
+	Ogre::SceneNode* stoneNode = tableNode->createChildSceneNode(strNode,
+		(Ogre::Vector3((float)xGrid * 0.086f - 0.61f, 0.1f, (float)yGrid * 0.086f - 0.61f)));
+	stoneNode->attachObject(entStone);
+	stoneNode->setScale(0.081f, 0.081f, 0.081f);
+}
+
+void GomokuGame::nextTurn()
+{
+	//change label at top of screen
+	setPlayerLabel();
+
+	//execute AI moves
+	if (bGameVSAI && turnColor == playerAI.getColor()) {
+		TilePos move;
+		do {
+			move = playerAI.getNextMove(&gBoard);
+		}
+		while (!addStoneToBoard(move.xPos, move.yPos));
+	}
+}
+
 void GomokuGame::resetGame() {
 	//remove stone physics, entities, and nodes
 	for (size_t i = 0; i < vecRigidStones.size(); i++) {
@@ -831,6 +899,9 @@ void GomokuGame::resetGame() {
 	//clear board grid
 	gBoard.clearBoard();
 	bGameOver = false;
+
+	//set turn color back to black
+	setPlayerLabel(true);
 
 	//set board back to starting position and reset its motion
 	btTransform initialTransform;

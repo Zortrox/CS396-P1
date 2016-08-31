@@ -61,6 +61,11 @@ std::vector<GameTile> GomokuBoard::getAllStones()
 	return vecStones;
 }
 
+std::vector< std::vector<GameTile> > GomokuBoard::getGameArea()
+{
+	return vecGameArea;
+}
+
 bool GomokuBoard::gameWon() {
 	int inRow = 5;		//number in row to win
 	int xCenter = mLastTile->xGrid;

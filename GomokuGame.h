@@ -55,7 +55,8 @@ protected:
     virtual bool mouseReleased( const OIS::MouseEvent &arg, OIS::MouseButtonID id );
 
 	virtual void buttonHit(OgreBites::Button* button);
-	virtual void GomokuGame::setMenu(int state);
+	virtual void setMenu(int state);
+	virtual void setPlayerLabel(bool reset = false);
 
     virtual void windowResized(Ogre::RenderWindow* rw);
     virtual void windowClosed(Ogre::RenderWindow* rw);
@@ -63,6 +64,9 @@ protected:
 	virtual void shootBox();
 	virtual Ogre::Vector3 getGameLookCoords();
 	virtual void setStonePhysics();
+	virtual bool addStoneToBoard(int xGrid, int yGrid);
+	virtual void addStoneGraphics(std::string strEntity, std::string strNode, int xGrid, int yGrid);
+	virtual void nextTurn();
 	virtual void resetGame();
 	virtual void removeAllMenuItems(Ogre::OverlayContainer* menuContainer);
 
@@ -79,6 +83,8 @@ protected:
     OgreBites::SdkCameraMan* mCameraMan;
     OgreBites::ParamsPanel* mDetailsPanel;
 	std::vector<OgreBites::Button*> vecMenuButtons;
+	OgreBites::Label* labelPlayer1;
+	OgreBites::Label* labelPlayer2;
    
 	OgreBites::InputContext mInputContext;
 	
@@ -109,11 +115,12 @@ protected:
 	int numBoxes;
 	Ogre::Vector3 mPickCoords;
 	GomokuBoard gBoard;
+	AIPlayer playerAI;
 	int mBoardX;
 	int mBoardY;
 	bool mOnBoard;
 	int mMenuState;
 	bool bGameOver;
 	bool bGameVSAI;
-	bool playerTurn;
+	int turnColor;
 };
