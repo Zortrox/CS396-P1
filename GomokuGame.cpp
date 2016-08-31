@@ -21,17 +21,7 @@ GomokuGame::GomokuGame()
     mKeyboard(0),
 	mOverlaySystem(0)
 {
-	physicsEngine = new Physics();
-	numBoxes = 0;
-	srand(time(NULL));
-	mBoardX = 0;
-	mBoardY = 0;
-	mOnBoard = false;
-	mMenuState = menuState::CLOSED;
-	bGameOver = false;
-	bGameVSAI = false;
-	turnColor = stoneColor::BLACK;
-	playerAI.setColor(stoneColor::WHITE);
+	
 }
 
 //-------------------------------------------------------------------------------------
@@ -181,7 +171,7 @@ void GomokuGame::createScene(void) {
 	btScalar mass = 10.0f;
 	btVector3 localInertia(0, 0, 0);
 	shapeTable = new btBoxShape(btVector3(2.0f, 0.18f, 2.0f));
-	transformTable.setOrigin(btVector3(0, 10, 0));
+	transformTable.setOrigin(btVector3(0, -10, 0));
 	shapeTable->calculateLocalInertia(mass, localInertia);
 	motionTable = new btDefaultMotionState(transformTable);
 	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionTable, shapeTable, localInertia);
@@ -195,7 +185,7 @@ void GomokuGame::createScene(void) {
 
 	Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 	Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		plane, 60, 60, 10, 10, true, 1, 10, 10, Ogre::Vector3::UNIT_Z);
+		plane, 200, 200, 10, 10, true, 1, 40, 40, Ogre::Vector3::UNIT_Z);
 	Ogre::Entity* entGround = mSceneMgr->createEntity("GroundEntity", "ground");
 	Ogre::SceneNode* nodeGround = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 	nodeGround->attachObject(entGround);
@@ -229,11 +219,11 @@ void GomokuGame::createScene(void) {
 	directionalLight->setDirection(Ogre::Vector3(0, -1, -0.3f));
 
 	//ambient light (darkness)
-	mSceneMgr->setAmbientLight(Ogre::ColourValue(.3f, .3f, .3f));
+	mSceneMgr->setAmbientLight(Ogre::ColourValue(.5f, .5f, .5f));
 
-	//fog
+	//fog & sky
 	mWindow->getViewport(0)->setBackgroundColour(Ogre::ColourValue(0, 0, 0));
-	mSceneMgr->setFog(Ogre::FOG_EXP2, Ogre::ColourValue(0, 0, 0), 0.1f);
+	mSceneMgr->setFog(Ogre::FOG_EXP2, Ogre::ColourValue(0, 0, 0), 0.07f);
 }
 //-------------------------------------------------------------------------------------
 void GomokuGame::destroyScene(void)
@@ -327,6 +317,18 @@ bool GomokuGame::setup(void)
 	}
 
     setupResources();
+
+	physicsEngine = new Physics();
+	srand(time(NULL));
+	mBoardX = 0;
+	mBoardY = 0;
+	mOnBoard = false;
+	mMenuState = menuState::CLOSED;
+	bGameOver = true;
+	bGameVSAI = false;
+	turnColor = stoneColor::BLACK;
+	playerAI.init(&gBoard);
+	playerAI.setColor(stoneColor::WHITE);
 
     bool carryOn = configure();
     if (!carryOn) return false;
@@ -717,52 +719,6 @@ void GomokuGame::windowClosed(Ogre::RenderWindow* rw)
     }
 }
 
-void GomokuGame::shootBox() {
-	Ogre::Vector3 pos = mCamera->getPosition();
-	Ogre::Vector3 dir = mCamera->getDirection();
-
-	float xDir = dir.x * 5.0f;
-	float yDir = dir.y * 5.0f;
-	float zDir = dir.z * 5.0f;
-
-	std::string strNum = std::to_string(numBoxes);
-
-	Ogre::Entity* entStone;
-	if (rand() % 2 == 0) {
-		entStone = mSceneMgr->createEntity("Stone_" + strNum, "GomokuStoneBlack.mesh");
-	}
-	else {
-		entStone = mSceneMgr->createEntity("Stone_" + strNum, "GomokuStoneWhite.mesh");
-	}
-	Ogre::SceneNode* nodeStone = mSceneMgr->getRootSceneNode()->createChildSceneNode(pos);
-	nodeStone->attachObject(entStone);
-	entStone->setCastShadows(true);
-	nodeStone->setScale(0.15f, 0.15f, 0.15f);
-	vecEntityStones.push_back(entStone);
-	vecNodeStones.push_back(nodeStone);
-
-	//BULLET
-	btTransform startTransform;
-	startTransform.setIdentity();
-	btScalar mass = .02f;
-	btVector3 localInertia(0, 0, 0);
-	startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-	shapeStone->calculateLocalInertia(mass, localInertia);
-	btDefaultMotionState* motionStone = new btDefaultMotionState(startTransform);
-	vecMotionStones.push_back(motionStone);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionStone, shapeStone, localInertia);
-	btRigidBody *stoneBody = new btRigidBody(rbInfo);
-	vecRigidStones.push_back(stoneBody);
-	stoneBody->setLinearVelocity(btVector3(xDir, yDir, zDir));
-	stoneBody->setAngularVelocity(btVector3((float)(rand() % 5 - 2), (float)(rand() % 5 - 2), (float)(rand() % 5 - 2)));
-	stoneBody->setRestitution(0.1f);
-	stoneBody->setUserPointer(nodeStone);
-	stoneBody->setFriction(1.5);
-	physicsEngine->getDynamicsWorld()->addRigidBody(stoneBody);
-
-	numBoxes++;
-}
-
 Ogre::Vector3 GomokuGame::getGameLookCoords() {
 	Ogre::Vector3 dir = mCamera->getDirection();
 	Ogre::Vector3 pos = mCamera->getPosition();
@@ -873,11 +829,11 @@ void GomokuGame::nextTurn()
 
 	//execute AI moves
 	if (bGameVSAI && turnColor == playerAI.getColor()) {
-		TilePos move;
+		TilePos* move;
 		do {
-			move = playerAI.getNextMove(&gBoard);
+			move = playerAI.getNextMove();
 		}
-		while (!addStoneToBoard(move.xPos, move.yPos));
+		while (!addStoneToBoard(move->xGrid, move->yGrid));
 	}
 }
 

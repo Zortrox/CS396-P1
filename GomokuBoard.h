@@ -21,6 +21,7 @@ public:
 
 	bool addStone(int xPos, int yPos, int color, std::string entName, std::string nodeName);
 	GameTile getStone(int xPos, int yPos);
+	GameTile getLastStone();
 	bool emptyTile(int xPos, int yPos);
 	int getBoardSize();
 	std::vector<GameTile> getAllStones();

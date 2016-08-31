@@ -38,6 +38,11 @@ GameTile GomokuBoard::getStone(int xPos, int yPos)
 	return vecGameArea[xPos][yPos];
 }
 
+GameTile GomokuBoard::getLastStone()
+{
+	return *mLastTile;
+}
+
 bool GomokuBoard::emptyTile(int xPos, int yPos)
 {
 	return vecGameArea[xPos][yPos].color == stoneColor::NONE;

@@ -61,7 +61,6 @@ protected:
     virtual void windowResized(Ogre::RenderWindow* rw);
     virtual void windowClosed(Ogre::RenderWindow* rw);
 
-	virtual void shootBox();
 	virtual Ogre::Vector3 getGameLookCoords();
 	virtual void setStonePhysics();
 	virtual bool addStoneToBoard(int xGrid, int yGrid);
@@ -112,15 +111,15 @@ protected:
 	std::vector<Ogre::Entity*> vecEntityStones;
 	std::vector<Ogre::SceneNode*> vecNodeStones;
 
-	int numBoxes;
-	Ogre::Vector3 mPickCoords;
 	GomokuBoard gBoard;
 	AIPlayer playerAI;
-	int mBoardX;
-	int mBoardY;
-	bool mOnBoard;
-	int mMenuState;
-	bool bGameOver;
-	bool bGameVSAI;
-	int turnColor;
+
+	Ogre::Vector3 mPickCoords;	//real mouse lookat coordinates
+	int mBoardX;	//x mouse coordinate on board
+	int mBoardY;	//y mouse coordinate on board
+	bool mOnBoard;	//if currently looking at the board
+	int mMenuState;	//controls which menu to show
+	bool bGameOver;	//if game won / lost
+	bool bGameVSAI;	//if game versus AI
+	int turnColor;	//turn stone color
 };
