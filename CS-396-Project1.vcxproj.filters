@@ -24,6 +24,9 @@
     <ClCompile Include="GomokuBoard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AIPlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Physics.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GomokuBoard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AIPlayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

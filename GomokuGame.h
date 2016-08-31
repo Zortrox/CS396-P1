@@ -20,6 +20,7 @@
 #include <vector>
 #include "Physics.h"
 #include "GomokuBoard.h"
+#include "AIPlayer.h"
 
 enum menuState { CLOSED, MAIN, NEW_GAME };
 enum menuButtons { B_QUIT, B_NEW, B_RESUME, B_VSAI, B_VSHUM, TOTAL};

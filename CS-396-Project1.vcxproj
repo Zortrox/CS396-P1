@@ -149,11 +149,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AIPlayer.cpp" />
     <ClCompile Include="GomokuBoard.cpp" />
     <ClCompile Include="GomokuGame.cpp" />
     <ClCompile Include="Physics.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AIPlayer.h" />
     <ClInclude Include="GomokuBoard.h" />
     <ClInclude Include="GomokuGame.h" />
     <ClInclude Include="Physics.h" />
