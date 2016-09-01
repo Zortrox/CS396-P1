@@ -4,6 +4,7 @@ GomokuBoard::GomokuBoard()
 {
 	mLastTile = NULL;
 	mBoardSize = 15;
+	mTilesPlaced = 0;
 
 	vecGameArea.resize(mBoardSize);
 	for (size_t i = 0; i < vecGameArea.size(); i++) {
@@ -27,6 +28,8 @@ bool GomokuBoard::addStone(int xPos, int yPos, int color, std::string entName, s
 		mLastTile->nodeName = nodeName;
 		mLastTile->xGrid = xPos;
 		mLastTile->yGrid = yPos;
+
+		mTilesPlaced++;
 
 		return true;
 	}
@@ -139,9 +142,14 @@ bool GomokuBoard::gameWon() {
 	else return false;
 }
 
+bool GomokuBoard::boardFilled() {
+	return (mTilesPlaced == mBoardSize * mBoardSize);
+}
+
 void GomokuBoard::clearBoard()
 {
 	mLastTile = NULL;
+	mTilesPlaced = 0;
 
 	vecGameArea.clear();
 	vecGameArea.resize(mBoardSize);

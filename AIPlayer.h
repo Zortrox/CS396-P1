@@ -24,13 +24,15 @@ public:
 	void init(GomokuBoard* gameBoard);
 	void reset();
 	TilePos* getNextMove();
-	void setColor(int mColor);
+	void setPlayerNum(int num, int color);
+	int getPlayerNum();
 	int getColor();
 
 private:
 	void updateTileWeights();
 	void sortTiles();
 
+	int mPlayerNum;
 	int mColor;
 	TilePos* mLastTile;
 	std::vector< std::vector<TilePos*> > vecTileGrid;

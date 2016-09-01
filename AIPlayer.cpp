@@ -62,13 +62,17 @@ TilePos* AIPlayer::getNextMove()
 	return placedTile;
 }
 
-void AIPlayer::setColor(int color)
+void AIPlayer::setPlayerNum(int num, int color)
 {
-	mColor = color;
+	mPlayerNum = num;
 }
 
-int AIPlayer::getColor()
+int AIPlayer::getPlayerNum()
 {
+	return mPlayerNum;
+}
+
+int AIPlayer::getColor() {
 	return mColor;
 }
 

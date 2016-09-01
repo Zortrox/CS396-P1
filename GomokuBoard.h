@@ -29,10 +29,12 @@ public:
 	std::vector<GameTile> getAllStones();
 	std::vector< std::vector<GameTile> > getGameArea();
 	bool gameWon();
+	bool boardFilled();
 	void clearBoard();
 
 private:
 	std::vector<std::vector<GameTile>> vecGameArea;
 	GameTile* mLastTile;
 	int mBoardSize;
+	int mTilesPlaced;
 };

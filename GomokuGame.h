@@ -26,7 +26,13 @@ namespace menuState {
 	enum menuState { CLOSED, MAIN, NEW_GAME };
 }
 namespace menuButtons {
-	enum menuButtons { B_QUIT, B_NEW, B_RESUME, B_VSAI, B_VSHUM, COUNT };
+	enum menuButtons { B_QUIT, B_NEW, B_RESUME, B_VSAI, B_VSHUM, B_AIVAI, COUNT };
+}
+namespace gamePlayers {
+	enum gamePlayers { P_BLACK, P_WHITE, COUNT };
+}
+namespace gameWinners {
+	enum gameMessage { WIN_BLACK, WIN_WHITE, WIN_TIE, COUNT };
 }
 
 class GomokuGame : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
@@ -72,6 +78,7 @@ protected:
 	virtual void nextTurn(bool reset = false);
 	virtual void resetGame();
 	virtual void removeAllMenuItems(Ogre::OverlayContainer* menuContainer);
+	virtual void displayWinner(int player);
 
     Ogre::Root *mRoot;
     Ogre::Camera* mCamera;
@@ -86,8 +93,8 @@ protected:
     OgreBites::SdkCameraMan* mCameraMan;
     OgreBites::ParamsPanel* mDetailsPanel;
 	std::vector<OgreBites::Button*> vecMenuButtons;
-	OgreBites::Label* labelPlayer1;
-	OgreBites::Label* labelPlayer2;
+	std::vector<OgreBites::Label*> vecPlayerLabels;
+	std::vector<OgreBites::Label*> vecWinnerLabels;
    
 	OgreBites::InputContext mInputContext;
 	
@@ -117,6 +124,7 @@ protected:
 
 	GomokuBoard gBoard;
 	AIPlayer playerAI;
+	AIPlayer playerAI2;
 
 	Ogre::Vector3 mPickCoords;	//real mouse lookat coordinates
 	int mBoardX;	//x mouse coordinate on board
@@ -125,5 +133,7 @@ protected:
 	int mMenuState;	//controls which menu to show
 	bool bGameOver;	//if game won / lost
 	bool bGameVSAI;	//if game versus AI
-	int turnColor;	//turn stone color
+	bool bGameAIVAI; //if 2 computers playing
+	int mCurrentPlayer;	//player's turn
+	int mGameWinner; //winner of the game
 };

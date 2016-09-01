@@ -138,10 +138,27 @@ void GomokuGame::createFrameListener(void)
 	vecMenuButtons[menuButtons::B_VSHUM] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
 	setMenu(menuState::NEW_GAME);
 
-	labelPlayer1 = mTrayMgr->createLabel(OgreBites::TL_TOP, "labelPlayer1", "Player 1 : (BLACK)", 200);
-	labelPlayer2 = mTrayMgr->createLabel(OgreBites::TL_TOP, "labelPlayer2", "Player 2 : (WHITE)", 200);
-	labelPlayer2->hide();
-	mTrayMgr->removeWidgetFromTray(labelPlayer2);
+	vecPlayerLabels.resize(gameWinners::COUNT);
+	vecPlayerLabels[gamePlayers::P_BLACK] = 
+		mTrayMgr->createLabel(OgreBites::TL_TOP, "labelPlayer1", "Player 1 : (BLACK)", 200);
+	vecPlayerLabels[gamePlayers::P_WHITE] = 
+		mTrayMgr->createLabel(OgreBites::TL_TOP, "labelPlayer2", "Player 2 : (WHITE)", 200);
+	mTrayMgr->removeWidgetFromTray(vecPlayerLabels[gamePlayers::P_WHITE]);
+	vecPlayerLabels[gamePlayers::P_WHITE]->hide();
+
+	vecWinnerLabels.resize(gameWinners::COUNT);
+	vecWinnerLabels[gameWinners::WIN_BLACK] =
+		mTrayMgr->createLabel(OgreBites::TL_TOP, "labelWinnerBlack", "Winner: Player 1 (BLACK)!", 250);
+	vecWinnerLabels[gameWinners::WIN_WHITE] = 
+		mTrayMgr->createLabel(OgreBites::TL_TOP, "labelWinnerWhite", "Winner: Player 2 (WHITE)!", 250);
+	vecWinnerLabels[gameWinners::WIN_TIE] = 
+		mTrayMgr->createLabel(OgreBites::TL_TOP, "labelWinnerTie", "TIE!  NO WINNER!", 250);
+	mTrayMgr->removeWidgetFromTray(vecWinnerLabels[gameWinners::WIN_BLACK]);
+	mTrayMgr->removeWidgetFromTray(vecWinnerLabels[gameWinners::WIN_WHITE]);
+	mTrayMgr->removeWidgetFromTray(vecWinnerLabels[gameWinners::WIN_TIE]);
+	vecWinnerLabels[gameWinners::WIN_BLACK]->hide();
+	vecWinnerLabels[gameWinners::WIN_WHITE]->hide();
+	vecWinnerLabels[gameWinners::WIN_TIE]->hide();
 
     mRoot->addFrameListener(this);
 }
@@ -326,9 +343,10 @@ bool GomokuGame::setup(void)
 	mMenuState = menuState::CLOSED;
 	bGameOver = true;
 	bGameVSAI = false;
-	turnColor = stoneColor::BLACK;
+	mCurrentPlayer = gamePlayers::P_BLACK;
+	mGameWinner = gameWinners::COUNT;
 	playerAI.init(&gBoard);
-	playerAI.setColor(stoneColor::WHITE);
+	playerAI.setPlayerNum(gamePlayers::P_WHITE, stoneColor::WHITE);
 
     bool carryOn = configure();
     if (!carryOn) return false;
@@ -674,20 +692,21 @@ void GomokuGame::setMenu(int state) {
 
 void GomokuGame::setPlayerLabel(bool reset)
 {
-	if (turnColor == stoneColor::WHITE || reset) {
-		turnColor = stoneColor::BLACK;
-		mTrayMgr->moveWidgetToTray(labelPlayer1, OgreBites::TL_TOP);
-		labelPlayer1->show();
-		mTrayMgr->removeWidgetFromTray(labelPlayer2);
-		labelPlayer2->hide();
+	//remove current player label
+	mTrayMgr->removeWidgetFromTray(vecPlayerLabels[mCurrentPlayer]);
+	vecPlayerLabels[mCurrentPlayer]->hide();
+
+	//select next player
+	if (mCurrentPlayer == gamePlayers::P_WHITE || reset) {
+		mCurrentPlayer = gamePlayers::P_BLACK;
 	}
-	else if (turnColor == stoneColor::BLACK) {
-		turnColor = stoneColor::WHITE;
-		mTrayMgr->moveWidgetToTray(labelPlayer2, OgreBites::TL_TOP);
-		labelPlayer2->show();
-		mTrayMgr->removeWidgetFromTray(labelPlayer1);
-		labelPlayer1->hide();
+	else if (mCurrentPlayer == gamePlayers::P_BLACK) {
+		mCurrentPlayer = gamePlayers::P_WHITE;
 	}
+
+	//add next player label
+	mTrayMgr->moveWidgetToTray(vecPlayerLabels[mCurrentPlayer], OgreBites::TL_TOP);
+	vecPlayerLabels[mCurrentPlayer]->show();
 }
 
 //Adjust mouse clipping area
@@ -787,14 +806,34 @@ bool GomokuGame::addStoneToBoard(int xGrid, int yGrid)
 	std::string strEntity = "entStone_" + strNum;
 	std::string strNode = "nodeStone_" + strNum;
 
+	//convert player to stone color
+	int color;
+	switch (mCurrentPlayer) {
+	case gamePlayers::P_BLACK:
+		color = stoneColor::BLACK;
+		break;
+	case gamePlayers::P_WHITE:
+		color = stoneColor::WHITE;
+		break;
+	}
+
 	//place stone at location if not already one there
-	if (gBoard.addStone(xGrid, yGrid, turnColor, strEntity, strNode)) {
+	if (gBoard.addStone(xGrid, yGrid, color, strEntity, strNode)) {
 		addStoneGraphics(strEntity, strNode, xGrid, yGrid);
 
 		//end game if won, otherwise switch players
 		if (gBoard.gameWon() && !bGameOver) {
+			//if game was won (not just reset)
 			bGameOver = true;
+
+			mGameWinner = mCurrentPlayer;
+			displayWinner(mGameWinner);
+
 			setStonePhysics();
+		}
+		else if (gBoard.boardFilled()) {
+			//tie occurred
+			displayWinner(gameWinners::WIN_TIE);
 		}
 		else {
 			nextTurn();
@@ -808,10 +847,10 @@ bool GomokuGame::addStoneToBoard(int xGrid, int yGrid)
 void GomokuGame::addStoneGraphics(std::string strEntity, std::string strNode, int xGrid, int yGrid)
 {
 	Ogre::Entity* entStone;
-	if (turnColor == stoneColor::BLACK) {
+	if (mCurrentPlayer == gamePlayers::P_BLACK) {
 		entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneBlack.mesh");
 	}
-	else if (turnColor = stoneColor::WHITE) {
+	else if (mCurrentPlayer == gamePlayers::P_WHITE) {
 		entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneWhite.mesh");
 	}
 	
@@ -828,7 +867,7 @@ void GomokuGame::nextTurn(bool reset)
 	setPlayerLabel(reset);
 
 	//execute AI moves
-	if (bGameVSAI && turnColor == playerAI.getColor()) {
+	if (bGameVSAI && mCurrentPlayer == playerAI.getPlayerNum()) {
 		TilePos* move;
 		do {
 			move = playerAI.getNextMove();
@@ -858,12 +897,52 @@ void GomokuGame::resetGame() {
 
 	//clear AI weights
 	setPlayerLabel(true);
-	if (bGameVSAI) {
+	if (bGameVSAI || bGameAIVAI) {
 		playerAI.reset();
-		int newColor = rand() % 2 + 1;
-		playerAI.setColor(newColor);
+		
+		//set new AI player number
+		int newPlayerNum = rand() % gamePlayers::COUNT;
+		int newColor;
+		switch (newPlayerNum) {
+		case gamePlayers::P_BLACK:
+			newColor = stoneColor::BLACK;
+			break;
+		case gamePlayers::P_WHITE:
+			newColor = stoneColor::WHITE;
+			break;
+		}
+		playerAI.setPlayerNum(newPlayerNum, newColor);
+
+		//start next turn
 		nextTurn(true);
 	}
+	//reset AI #2
+	if (bGameAIVAI) {
+		playerAI.reset();
+
+		//set new AI player number
+		int newPlayerNum = rand() % gamePlayers::COUNT;
+		int newColor;
+		switch (newPlayerNum) {
+		case gamePlayers::P_BLACK:
+			newColor = stoneColor::BLACK;
+			break;
+		case gamePlayers::P_WHITE:
+			newColor = stoneColor::WHITE;
+			break;
+		}
+		playerAI.setPlayerNum(newPlayerNum, newColor);
+
+		//start next turn
+		nextTurn(true);
+	}
+
+	//clear winner from screen
+	if (mGameWinner != gameWinners::COUNT) {
+		mTrayMgr->removeWidgetFromTray(vecWinnerLabels[mGameWinner]);
+		vecWinnerLabels[mGameWinner]->hide();
+	}
+	mGameWinner = gameWinners::COUNT;
 
 	//set board back to starting position and reset its motion
 	btTransform initialTransform;
@@ -883,6 +962,15 @@ void GomokuGame::removeAllMenuItems(Ogre::OverlayContainer * menuContainer)
 		mTrayMgr->removeWidgetFromTray(vecMenuButtons[i]->getName());
 		vecMenuButtons[i]->hide();
 	}
+}
+
+void GomokuGame::displayWinner(int player)
+{
+	mTrayMgr->moveWidgetToTray(vecWinnerLabels[player], OgreBites::TL_TOP);
+	vecWinnerLabels[player]->show();
+	
+	mTrayMgr->removeWidgetFromTray(vecPlayerLabels[mCurrentPlayer]);
+	vecPlayerLabels[mCurrentPlayer]->hide();
 }
 
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR strCmdLine, INT)
