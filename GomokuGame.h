@@ -22,8 +22,12 @@
 #include "GomokuBoard.h"
 #include "AIPlayer.h"
 
-enum menuState { CLOSED, MAIN, NEW_GAME };
-enum menuButtons { B_QUIT, B_NEW, B_RESUME, B_VSAI, B_VSHUM, TOTAL};
+namespace menuState {
+	enum menuState { CLOSED, MAIN, NEW_GAME };
+}
+namespace menuButtons {
+	enum menuButtons { B_QUIT, B_NEW, B_RESUME, B_VSAI, B_VSHUM, COUNT };
+}
 
 class GomokuGame : public Ogre::FrameListener, public Ogre::WindowEventListener, public OIS::KeyListener, public OIS::MouseListener, OgreBites::SdkTrayListener
 {
@@ -65,7 +69,7 @@ protected:
 	virtual void setStonePhysics();
 	virtual bool addStoneToBoard(int xGrid, int yGrid);
 	virtual void addStoneGraphics(std::string strEntity, std::string strNode, int xGrid, int yGrid);
-	virtual void nextTurn();
+	virtual void nextTurn(bool reset = false);
 	virtual void resetGame();
 	virtual void removeAllMenuItems(Ogre::OverlayContainer* menuContainer);
 

@@ -130,7 +130,7 @@ void GomokuGame::createFrameListener(void)
     mDetailsPanel->setParamValue(10, "Solid");
     mDetailsPanel->hide();
 
-	vecMenuButtons.resize(menuButtons::TOTAL);
+	vecMenuButtons.resize(menuButtons::COUNT);
 	vecMenuButtons[menuButtons::B_NEW] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNew", "New Game");
 	vecMenuButtons[menuButtons::B_QUIT] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonQuit", "Quit");
 	vecMenuButtons[menuButtons::B_RESUME] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonResume", "Resume");
@@ -822,10 +822,10 @@ void GomokuGame::addStoneGraphics(std::string strEntity, std::string strNode, in
 	stoneNode->setScale(0.081f, 0.081f, 0.081f);
 }
 
-void GomokuGame::nextTurn()
+void GomokuGame::nextTurn(bool reset)
 {
 	//change label at top of screen
-	setPlayerLabel();
+	setPlayerLabel(reset);
 
 	//execute AI moves
 	if (bGameVSAI && turnColor == playerAI.getColor()) {
@@ -856,8 +856,14 @@ void GomokuGame::resetGame() {
 	gBoard.clearBoard();
 	bGameOver = false;
 
-	//set turn color back to black
+	//clear AI weights
 	setPlayerLabel(true);
+	if (bGameVSAI) {
+		playerAI.reset();
+		int newColor = rand() % 2 + 1;
+		playerAI.setColor(newColor);
+		nextTurn(true);
+	}
 
 	//set board back to starting position and reset its motion
 	btTransform initialTransform;

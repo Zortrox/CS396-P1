@@ -38,9 +38,9 @@ GameTile GomokuBoard::getStone(int xPos, int yPos)
 	return vecGameArea[xPos][yPos];
 }
 
-GameTile GomokuBoard::getLastStone()
+GameTile* GomokuBoard::getLastStone()
 {
-	return *mLastTile;
+	return mLastTile;
 }
 
 bool GomokuBoard::emptyTile(int xPos, int yPos)

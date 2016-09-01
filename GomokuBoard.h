@@ -3,7 +3,9 @@
 #include <vector>
 #include <string>
 
-enum stoneColor { NONE, BLACK, WHITE };
+namespace stoneColor {
+	enum stoneColor { NONE, BLACK, WHITE };
+}
 
 struct GameTile {
 	GameTile() : color(stoneColor::NONE) {}
@@ -21,7 +23,7 @@ public:
 
 	bool addStone(int xPos, int yPos, int color, std::string entName, std::string nodeName);
 	GameTile getStone(int xPos, int yPos);
-	GameTile getLastStone();
+	GameTile* getLastStone();
 	bool emptyTile(int xPos, int yPos);
 	int getBoardSize();
 	std::vector<GameTile> getAllStones();
