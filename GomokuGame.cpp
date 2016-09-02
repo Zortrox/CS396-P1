@@ -136,6 +136,7 @@ void GomokuGame::createFrameListener(void)
 	vecMenuButtons[menuButtons::B_RESUME] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonResume", "Resume");
 	vecMenuButtons[menuButtons::B_VSAI] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAI", "vs AI");
 	vecMenuButtons[menuButtons::B_VSHUM] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewHum", "vs Player");
+	vecMenuButtons[menuButtons::B_AIVAI] = mTrayMgr->createButton(OgreBites::TL_CENTER, "buttonNewAIvAI", "AI vs AI");
 	setMenu(menuState::NEW_GAME);
 
 	vecPlayerLabels.resize(gameWinners::COUNT);
@@ -342,11 +343,15 @@ bool GomokuGame::setup(void)
 	mOnBoard = false;
 	mMenuState = menuState::CLOSED;
 	bGameOver = true;
+	bPhysicsApplied = false;
+	bGameStart = false;
+	bHasFallen = false;
 	bGameVSAI = false;
 	mCurrentPlayer = gamePlayers::P_BLACK;
 	mGameWinner = gameWinners::COUNT;
 	playerAI.init(&gBoard);
-	playerAI.setPlayerNum(gamePlayers::P_WHITE, stoneColor::WHITE);
+	playerAI2.init(&gBoard);
+	mAITurnTimer = 0.0f;
 
     bool carryOn = configure();
     if (!carryOn) return false;
@@ -401,6 +406,24 @@ bool GomokuGame::frameRenderingQueued(const Ogre::FrameEvent& evt)
 					sceneNode->setOrientation(Ogre::Quaternion(orientation.getW(), orientation.getX(), orientation.getY(), orientation.getZ()));
 				}
 			}
+		}
+	}
+
+	//start next turn when board is ready
+	if (rigidTable->getLinearVelocity().length() > 0.1f) {
+		bHasFallen = true;
+	}
+	if (!bGameStart && bHasFallen && rigidTable->getLinearVelocity().length() < 0.001f) {
+		bGameStart = true;
+		nextTurn();
+	}
+
+	float timeWait = 0.1f;
+	if (bGameStart && bGameAIVAI && !bGameOver) {
+		mAITurnTimer += evt.timeSinceLastFrame;
+		if (mAITurnTimer >= timeWait) {
+			mAITurnTimer = 0.0f;
+			nextTurn();
 		}
 	}
 
@@ -602,7 +625,7 @@ bool GomokuGame::mouseMoved(const OIS::MouseEvent &arg)
 bool GomokuGame::mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id)
 {
 	if (id == OIS::MB_Left) {
-		if (mOnBoard && !mCursorMode && !bGameOver) {
+		if (mOnBoard && !mCursorMode && !bGameOver && !bGameAIVAI) {
 			//add stone if able to
 			addStoneToBoard(mBoardX, mBoardY);
 		}
@@ -632,21 +655,27 @@ void GomokuGame::buttonHit(OgreBites::Button * button)
 		setMenu(menuState::CLOSED);
 	}
 	else if (button->getName() == "buttonNew") {
-		if (!bGameOver) {
-			bGameOver = true;
-			rigidTable->activate();
-			setStonePhysics();
-		}
+		bGameOver = true;
+		rigidTable->activate();
+		setStonePhysics();
 		setMenu(menuState::NEW_GAME);
 	}
 	else if (button->getName() == "buttonNewAI") {
-		resetGame();
 		bGameVSAI = true;
+		bGameAIVAI = false;
+		resetGame();
 		setMenu(menuState::CLOSED);
 	}
 	else if (button->getName() == "buttonNewHum") {
-		resetGame();
 		bGameVSAI = false;
+		bGameAIVAI = false;
+		resetGame();
+		setMenu(menuState::CLOSED);
+	}
+	else if (button->getName() == "buttonNewAIvAI") {
+		bGameVSAI = false;
+		bGameAIVAI = true;
+		resetGame();
 		setMenu(menuState::CLOSED);
 	}
 }
@@ -683,6 +712,8 @@ void GomokuGame::setMenu(int state) {
 		vecMenuButtons[menuButtons::B_VSAI]->show();
 		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_VSHUM]->getName(), OgreBites::TL_CENTER);
 		vecMenuButtons[menuButtons::B_VSHUM]->show();
+		mTrayMgr->moveWidgetToTray(vecMenuButtons[menuButtons::B_AIVAI]->getName(), OgreBites::TL_CENTER);
+		vecMenuButtons[menuButtons::B_AIVAI]->show();
 		break;
 	}
 
@@ -757,46 +788,51 @@ Ogre::Vector3 GomokuGame::getGameLookCoords() {
 }
 
 void GomokuGame::setStonePhysics() {
-	std::vector<GameTile> vecStones = gBoard.getAllStones();
-	
-	for (size_t i = 0; i < vecStones.size(); i++) {
-		Ogre::SceneNode* nodeStone = mSceneMgr->getSceneNode(vecStones[i].nodeName);
-		Ogre::Vector3 pos = nodeStone->_getDerivedPosition();
-		mSceneMgr->destroyEntity(vecStones[i].entName);
-		mSceneMgr->destroySceneNode(vecStones[i].nodeName);
+	//flip board if physics not already applied
+	if (!bPhysicsApplied) {
+		std::vector<GameTile> vecStones = gBoard.getAllStones();
 
-		Ogre::Entity* entStone;
-		if (vecStones[i].color == stoneColor::BLACK) {
-			entStone = mSceneMgr->createEntity(vecStones[i].entName, "GomokuStoneBlack.mesh");
-		}
-		else {
-			entStone = mSceneMgr->createEntity(vecStones[i].entName, "GomokuStoneWhite.mesh");
-		}
-		nodeStone = mSceneMgr->getRootSceneNode()->createChildSceneNode(vecStones[i].nodeName, pos);
-		nodeStone->attachObject(entStone);
-		entStone->setCastShadows(true);
-		nodeStone->setScale(0.15f, 0.15f, 0.15f);
-		vecEntityStones.push_back(entStone);
-		vecNodeStones.push_back(nodeStone);
+		for (size_t i = 0; i < vecStones.size(); i++) {
+			Ogre::SceneNode* nodeStone = mSceneMgr->getSceneNode(vecStones[i].nodeName);
+			Ogre::Vector3 pos = nodeStone->_getDerivedPosition();
+			mSceneMgr->destroyEntity(vecStones[i].entName);
+			mSceneMgr->destroySceneNode(vecStones[i].nodeName);
 
-		btTransform startTransform;
-		startTransform.setIdentity();
-		btScalar mass = .02f;
-		btVector3 localInertia(0, 0, 0);
-		startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
-		shapeStone->calculateLocalInertia(mass, localInertia);
-		btDefaultMotionState* motionStone = new btDefaultMotionState(startTransform);
-		vecMotionStones.push_back(motionStone);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionStone, shapeStone, localInertia);
-		btRigidBody *stoneBody = new btRigidBody(rbInfo);
-		vecRigidStones.push_back(stoneBody);
-		stoneBody->setRestitution(0.1f);
-		stoneBody->setUserPointer(nodeStone);
-		stoneBody->setFriction(1.5);
-		physicsEngine->getDynamicsWorld()->addRigidBody(stoneBody);
+			Ogre::Entity* entStone;
+			if (vecStones[i].color == stoneColor::BLACK) {
+				entStone = mSceneMgr->createEntity(vecStones[i].entName, "GomokuStoneBlack.mesh");
+			}
+			else {
+				entStone = mSceneMgr->createEntity(vecStones[i].entName, "GomokuStoneWhite.mesh");
+			}
+			nodeStone = mSceneMgr->getRootSceneNode()->createChildSceneNode(vecStones[i].nodeName, pos);
+			nodeStone->attachObject(entStone);
+			entStone->setCastShadows(true);
+			nodeStone->setScale(0.15f, 0.15f, 0.15f);
+			vecEntityStones.push_back(entStone);
+			vecNodeStones.push_back(nodeStone);
+
+			btTransform startTransform;
+			startTransform.setIdentity();
+			btScalar mass = .02f;
+			btVector3 localInertia(0, 0, 0);
+			startTransform.setOrigin(btVector3(pos.x, pos.y, pos.z));
+			shapeStone->calculateLocalInertia(mass, localInertia);
+			btDefaultMotionState* motionStone = new btDefaultMotionState(startTransform);
+			vecMotionStones.push_back(motionStone);
+			btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionStone, shapeStone, localInertia);
+			btRigidBody *stoneBody = new btRigidBody(rbInfo);
+			vecRigidStones.push_back(stoneBody);
+			stoneBody->setRestitution(0.1f);
+			stoneBody->setUserPointer(nodeStone);
+			stoneBody->setFriction(1.5);
+			physicsEngine->getDynamicsWorld()->addRigidBody(stoneBody);
+		}
+
+		rigidTable->applyImpulse(btVector3(0, 30, 50), btVector3(0, 0, 10));
 	}
 
-	rigidTable->applyImpulse(btVector3(0, 30, 50), btVector3(0, 0, 10));
+	bPhysicsApplied = true;
 }
 
 bool GomokuGame::addStoneToBoard(int xGrid, int yGrid)
@@ -825,18 +861,22 @@ bool GomokuGame::addStoneToBoard(int xGrid, int yGrid)
 		if (gBoard.gameWon() && !bGameOver) {
 			//if game was won (not just reset)
 			bGameOver = true;
-
 			mGameWinner = mCurrentPlayer;
 			displayWinner(mGameWinner);
-
-			setStonePhysics();
 		}
 		else if (gBoard.boardFilled()) {
 			//tie occurred
+			bGameOver = true;
 			displayWinner(gameWinners::WIN_TIE);
 		}
 		else {
-			nextTurn();
+			//change label at top of screen
+			setPlayerLabel();
+
+			//cycle next turn
+			if (!bGameAIVAI) {
+				nextTurn();
+			}
 		}
 
 		return true;
@@ -861,18 +901,20 @@ void GomokuGame::addStoneGraphics(std::string strEntity, std::string strNode, in
 	stoneNode->setScale(0.081f, 0.081f, 0.081f);
 }
 
-void GomokuGame::nextTurn(bool reset)
+void GomokuGame::nextTurn()
 {
-	//change label at top of screen
-	setPlayerLabel(reset);
-
 	//execute AI moves
-	if (bGameVSAI && mCurrentPlayer == playerAI.getPlayerNum()) {
+	if ((bGameVSAI || bGameAIVAI) && mCurrentPlayer == playerAI.getPlayerNum() && bGameStart) {
 		TilePos* move;
 		do {
 			move = playerAI.getNextMove();
-		}
-		while (!addStoneToBoard(move->xGrid, move->yGrid));
+		} while (!addStoneToBoard(move->xGrid, move->yGrid));
+	}
+	else if (bGameAIVAI && mCurrentPlayer == playerAI2.getPlayerNum() && bGameStart) {
+		TilePos* move;
+		do {
+			move = playerAI2.getNextMove();
+		} while (!addStoneToBoard(move->xGrid, move->yGrid));
 	}
 }
 
@@ -894,16 +936,23 @@ void GomokuGame::resetGame() {
 	//clear board grid
 	gBoard.clearBoard();
 	bGameOver = false;
+	bPhysicsApplied = false;
+	bGameStart = false;
+	bHasFallen = false;
+
+	//reset AI move timer
+	mAITurnTimer = 0.0f;
 
 	//clear AI weights
 	setPlayerLabel(true);
+	int playerAINum;
 	if (bGameVSAI || bGameAIVAI) {
 		playerAI.reset();
 		
 		//set new AI player number
-		int newPlayerNum = rand() % gamePlayers::COUNT;
+		playerAINum = rand() % gamePlayers::COUNT;
 		int newColor;
-		switch (newPlayerNum) {
+		switch (playerAINum) {
 		case gamePlayers::P_BLACK:
 			newColor = stoneColor::BLACK;
 			break;
@@ -911,31 +960,33 @@ void GomokuGame::resetGame() {
 			newColor = stoneColor::WHITE;
 			break;
 		}
-		playerAI.setPlayerNum(newPlayerNum, newColor);
+		playerAI.setPlayerNum(playerAINum, newColor);
 
-		//start next turn
-		nextTurn(true);
-	}
-	//reset AI #2
-	if (bGameAIVAI) {
-		playerAI.reset();
+		//reset AI #2
+		if (bGameAIVAI) {
+			playerAI2.reset();
 
-		//set new AI player number
-		int newPlayerNum = rand() % gamePlayers::COUNT;
-		int newColor;
-		switch (newPlayerNum) {
-		case gamePlayers::P_BLACK:
-			newColor = stoneColor::BLACK;
-			break;
-		case gamePlayers::P_WHITE:
-			newColor = stoneColor::WHITE;
-			break;
+			//set new AI player number that isn't the other player's number
+			//written to allow for multiple players in the future
+			int playerAINum2;
+			do {
+				playerAINum2 = rand() % gamePlayers::COUNT;
+			}
+			while (playerAINum2 == playerAINum);
+
+			int newColor;
+			switch (playerAINum2) {
+			case gamePlayers::P_BLACK:
+				newColor = stoneColor::BLACK;
+				break;
+			case gamePlayers::P_WHITE:
+				newColor = stoneColor::WHITE;
+				break;
+			}
+			playerAI2.setPlayerNum(playerAINum2, newColor);
 		}
-		playerAI.setPlayerNum(newPlayerNum, newColor);
-
-		//start next turn
-		nextTurn(true);
 	}
+	setPlayerLabel(true);
 
 	//clear winner from screen
 	if (mGameWinner != gameWinners::COUNT) {

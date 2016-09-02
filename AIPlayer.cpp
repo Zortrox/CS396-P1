@@ -117,6 +117,7 @@ void AIPlayer::updateTileWeights()
 				xCenter = rand() % (boardSize - 1);
 				yCenter = rand() % (boardSize - 1);
 				vecTileGrid[xCenter][yCenter]->weight = 2;
+				continue;
 			}
 			else continue;
 		}

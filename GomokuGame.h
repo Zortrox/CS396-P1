@@ -75,7 +75,7 @@ protected:
 	virtual void setStonePhysics();
 	virtual bool addStoneToBoard(int xGrid, int yGrid);
 	virtual void addStoneGraphics(std::string strEntity, std::string strNode, int xGrid, int yGrid);
-	virtual void nextTurn(bool reset = false);
+	virtual void nextTurn();
 	virtual void resetGame();
 	virtual void removeAllMenuItems(Ogre::OverlayContainer* menuContainer);
 	virtual void displayWinner(int player);
@@ -132,8 +132,14 @@ protected:
 	bool mOnBoard;	//if currently looking at the board
 	int mMenuState;	//controls which menu to show
 	bool bGameOver;	//if game won / lost
+	bool bPhysicsApplied;	//if the board has been flipped
+	bool bGameStart; //if board is ready to play
+	bool bHasFallen;  //if the board has started falling
 	bool bGameVSAI;	//if game versus AI
 	bool bGameAIVAI; //if 2 computers playing
 	int mCurrentPlayer;	//player's turn
 	int mGameWinner; //winner of the game
+
+	//sets when the AI v AI players can make a move
+	float mAITurnTimer;
 };
