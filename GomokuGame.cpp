@@ -625,7 +625,7 @@ bool GomokuGame::mouseMoved(const OIS::MouseEvent &arg)
 bool GomokuGame::mousePressed(const OIS::MouseEvent &arg, OIS::MouseButtonID id)
 {
 	if (id == OIS::MB_Left) {
-		if (mOnBoard && !mCursorMode && !bGameOver && !bGameAIVAI) {
+		if (mOnBoard && !mCursorMode && !bGameOver && !bGameAIVAI && bGameStart) {
 			//add stone if able to
 			addStoneToBoard(mBoardX, mBoardY);
 		}
