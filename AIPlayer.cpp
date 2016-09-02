@@ -1,3 +1,11 @@
+/*
+	AIPlayer.cpp
+	Setup for the AI to make game moves
+
+	@author Matthew Clark
+	@date 09/02/2016
+*/
+
 #include "AIPlayer.h"
 #include "GomokuBoard.h"
 #include <stdlib.h>
@@ -7,6 +15,7 @@ AIPlayer::AIPlayer() {
 }
 
 AIPlayer::~AIPlayer() {
+	//remove all tiles to clear RAM
 	for (size_t i = 0; i < vecTileWeights.size(); i++) {
 		delete vecTileWeights[i];
 	}
@@ -14,11 +23,14 @@ AIPlayer::~AIPlayer() {
 
 void AIPlayer::init(GomokuBoard* gameBoard)
 {
+	//set up the board
 	gBoard = gameBoard;
 	size_t size = gBoard->getBoardSize();
 
+	//set last tile placed
 	mLastTile = NULL;
 
+	//create tile weight pointers
 	vecTileGrid.resize(size);
 	for (size_t i = 0; i < size; i++) {
 		vecTileGrid[i].resize(size);
@@ -30,6 +42,7 @@ void AIPlayer::init(GomokuBoard* gameBoard)
 }
 
 void AIPlayer::reset() {
+	//reset the weights of all tiles
 	size_t size = vecTileWeights.size();
 	for (size_t i = 0; i < size; i++) {
 		vecTileWeights[i]->weight = 0;
@@ -106,7 +119,7 @@ void AIPlayer::updateTileWeights()
 		else if (player == playerType::SELF) {
 			//get the last stone AI placed
 			//if AI is first player, place a stone randomly
-			//otherwise use previous player's stone as weights
+			//otherwise just use previous player's stone as weights
 			GameTile* lastTile = gBoard->getLastStone();
 			if (mLastTile) {
 				xCenter = mLastTile->xGrid;
@@ -125,12 +138,13 @@ void AIPlayer::updateTileWeights()
 		//check tiles in every direction from previous tile
 		//and add to new weight
 		for (int dir = 0; dir < 4; dir++) {
-			//weights before and after new tile added
+			//weights before and after (in row) new tile added
 			int weightAfter = 0;
 			int weightBeforeCenter = 0;
 			int weightAfterCenter = 0;
 			bool bCenterBlock = false;
 
+			//change coordinates based on direction
 			int xChange = 0;
 			int yChange = 0;
 			switch (dir) {
@@ -180,13 +194,14 @@ void AIPlayer::updateTileWeights()
 						if (endTile && bCenterBlock) {
 							weightAfterCenter = weightAfter - weightBeforeCenter - 1;
 
-							//add to weight if it's an empty square
+							//add weight to end tile if block is empty
 							if (vecGameArea[endTile->xGrid][endTile->yGrid].color == stoneColor::NONE) {
 								endTile->weight += 2 * weightAfterCenter + 1 - (player == playerType::SELF);
 								if (weightAfter == 4) {
 									endTile->weight *= 3 + (player == playerType::SELF);
 								}
 							}
+							//add weight to other end tile if block is empty
 							if (vecGameArea[currX][currY].color == stoneColor::NONE) {
 								vecTileGrid[currX][currY]->weight += 2 * weightBeforeCenter + 1 - (player == playerType::SELF);
 								if (weightAfter == 4) {
@@ -194,6 +209,7 @@ void AIPlayer::updateTileWeights()
 								}
 							}
 
+							//set that the row isn't checking the center block of stones anymore
 							bCenterBlock = false;
 						}
 
@@ -217,6 +233,7 @@ void AIPlayer::sortTiles()
 		tempTile = vecTileWeights[i];
 		tempPos = i - 1;
 
+		//switches positions if weight is less than the the next one's weight
 		while (tempPos >= 0 && vecTileWeights[tempPos]->weight < tempTile->weight) {
 			vecTileWeights[tempPos + 1] = vecTileWeights[tempPos];
 			tempPos--;

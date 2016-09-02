@@ -1,3 +1,11 @@
+/*
+	GomokuGame.cpp
+	Sets up the game, input, display, and resources
+
+	@author Matthew Clark
+	@date 09/02/2016
+*/
+
 #include "GomokuGame.h"
 #include <stdlib.h>
 #include <time.h>
@@ -259,27 +267,11 @@ void GomokuGame::createViewports(void)
 //-------------------------------------------------------------------------------------
 void GomokuGame::setupResources(void)
 {
-    // Load resource paths from config file
-    Ogre::ConfigFile cf;
-    cf.load(mResourcesCfg);
-
-    // Go through all sections & settings in the file
-    Ogre::ConfigFile::SectionIterator seci = cf.getSectionIterator();
-
-    Ogre::String secName, typeName, archName;
-    while (seci.hasMoreElements())
-    {
-        secName = seci.peekNextKey();
-        Ogre::ConfigFile::SettingsMultiMap *settings = seci.getNext();
-        Ogre::ConfigFile::SettingsMultiMap::iterator i;
-        for (i = settings->begin(); i != settings->end(); ++i)
-        {
-            typeName = i->first;
-            archName = i->second;
-            Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
-                archName, typeName, secName);
-        }
-    }
+	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/scripts", "FileSystem", "materials");
+	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/programs", "FileSystem", "programs");
+	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/textures", "FileSystem", "textures");
+	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/models", "FileSystem", "models");
+	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/packs/SdkTrays.zip", "Zip", "SdkTrays");
 }
 //-------------------------------------------------------------------------------------
 void GomokuGame::createResourceListener(void)
@@ -322,8 +314,6 @@ bool GomokuGame::setup(void)
 	Ogre::StringVector plugins_toLoad;
 	plugins_toLoad.push_back("RenderSystem_GL");
 	plugins_toLoad.push_back("Plugin_ParticleFX");
-	plugins_toLoad.push_back("Plugin_BSPSceneManager");
-	//plugins_toLoad.push_back("Plugin_CgProgramManager");
 
 	for (Ogre::StringVector::iterator j = plugins_toLoad.begin(); j != plugins_toLoad.end(); j++)
 	{
@@ -352,6 +342,11 @@ bool GomokuGame::setup(void)
 	playerAI.init(&gBoard);
 	playerAI2.init(&gBoard);
 	mAITurnTimer = 0.0f;
+
+	materialStoneBlack = Ogre::MaterialManager::getSingleton().getByName("BlackStone.material");
+	materialStoneWhite = Ogre::MaterialManager::getSingleton().getByName("WhiteStone.material");
+	materialStoneBlack->setReceiveShadows(false);
+	materialStoneWhite->setReceiveShadows(false);
 
     bool carryOn = configure();
     if (!carryOn) return false;
@@ -549,32 +544,6 @@ break;
 		else if (mMenuState == menuState::NEW_GAME) {
 			setMenu(menuState::MAIN);
 		}
-	}
-	else if (arg.key == OIS::KC_O) {
-		/*
-		int size = gBoard.getBoardSize();
-		for (int i = 0; i < size; i++) {
-			for (int j = 0; j < size; j++) {
-				std::string stre = "fill" + std::to_string(i) + "_" + std::to_string(j);
-				std::string strn = "fillNode" + std::to_string(i) + "_" + std::to_string(j);
-				int color = rand() % 2 + 1;
-
-				if (gBoard.addStone(i, j, color, stre, strn)) {
-					Ogre::Entity* entStone;
-					if (color == stoneColor::BLACK) {
-						entStone = mSceneMgr->createEntity(stre, "GomokuStoneBlack.mesh");
-					}
-					else {
-						entStone = mSceneMgr->createEntity(stre, "GomokuStoneWhite.mesh");
-					}
-					Ogre::SceneNode* tableNode = mSceneMgr->getSceneNode("GomokuTable");
-					Ogre::SceneNode* stoneNode = tableNode->createChildSceneNode(strn,
-						(Ogre::Vector3((float)i * 0.086f - 0.61f, 0.1f, (float)j * 0.088f - 0.61f)));
-					stoneNode->attachObject(entStone);
-					stoneNode->setScale(0.081f, 0.081f, 0.081f);
-				}
-			}
-		}*/
 	}
 
 	//mCameraMan->injectKeyDown(arg);
@@ -867,7 +836,8 @@ bool GomokuGame::addStoneToBoard(int xGrid, int yGrid)
 		else if (gBoard.boardFilled()) {
 			//tie occurred
 			bGameOver = true;
-			displayWinner(gameWinners::WIN_TIE);
+			mGameWinner = gameWinners::WIN_TIE;
+			displayWinner(mGameWinner);
 		}
 		else {
 			//change label at top of screen
@@ -889,9 +859,11 @@ void GomokuGame::addStoneGraphics(std::string strEntity, std::string strNode, in
 	Ogre::Entity* entStone;
 	if (mCurrentPlayer == gamePlayers::P_BLACK) {
 		entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneBlack.mesh");
+		entStone->setMaterial(materialStoneBlack);
 	}
 	else if (mCurrentPlayer == gamePlayers::P_WHITE) {
 		entStone = mSceneMgr->createEntity(strEntity, "GomokuStoneWhite.mesh");
+		entStone->setMaterial(materialStoneWhite);
 	}
 	
 	Ogre::SceneNode* tableNode = mSceneMgr->getSceneNode("GomokuTable");

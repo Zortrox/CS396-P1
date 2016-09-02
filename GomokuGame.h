@@ -1,3 +1,11 @@
+/*
+	GomokuGame.h
+	Sets up the game, input, display, and resources
+
+	@author Matthew Clark
+	@date 09/02/2016
+*/
+
 #pragma once
 
 #include <OgreCamera.h>
@@ -121,6 +129,8 @@ protected:
 
 	std::vector<Ogre::Entity*> vecEntityStones;
 	std::vector<Ogre::SceneNode*> vecNodeStones;
+	Ogre::MaterialPtr materialStoneBlack;
+	Ogre::MaterialPtr materialStoneWhite;
 
 	GomokuBoard gBoard;
 	AIPlayer playerAI;
