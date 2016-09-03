@@ -49,9 +49,14 @@ public:
 	//get the stone color
 	int getColor();
 
+	std::vector< std::vector<TilePos*> > getWeightGrid();
+
 private:
 	//update the weights of the game board tiles to determine next move
 	void updateTileWeights();
+
+	//add weights to a tile based on aggression, defensiveness
+	void addWeightToTile(int totalWeight, int inRow, int player, TilePos* tileToSet);
 
 	//sort the tiles high -> low based on weights
 	void sortTiles();

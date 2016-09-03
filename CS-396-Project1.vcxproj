@@ -161,14 +161,14 @@
     <ClInclude Include="Physics.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\..\..\libs\Bullet3\build3\vs2010\BulletCollision.vcxproj">
-      <Project>{a3758f4b-5b12-eb41-9d08-e267738cfe85}</Project>
+    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\BulletCollision.vcxproj">
+      <Project>{e87cf928-40fb-604a-9b55-5b5ebb74218e}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\..\..\libs\Bullet3\build3\vs2010\BulletDynamics.vcxproj">
-      <Project>{1e6b49f3-740a-fc44-8efa-c18f0ca9a3e0}</Project>
+    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\BulletDynamics.vcxproj">
+      <Project>{eff92a7c-4f74-fb4c-ac3d-19a8ffab8baf}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\..\..\libs\Bullet3\build3\vs2010\LinearMath.vcxproj">
-      <Project>{c931f571-7782-5840-823b-73de229fad74}</Project>
+    <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\LinearMath.vcxproj">
+      <Project>{27fb4b66-d600-934d-8e2d-e6d48a5b4a3a}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

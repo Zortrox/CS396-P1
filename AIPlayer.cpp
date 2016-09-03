@@ -78,6 +78,7 @@ TilePos* AIPlayer::getNextMove()
 void AIPlayer::setPlayerNum(int num, int color)
 {
 	mPlayerNum = num;
+	mColor = color;
 }
 
 int AIPlayer::getPlayerNum()
@@ -87,6 +88,11 @@ int AIPlayer::getPlayerNum()
 
 int AIPlayer::getColor() {
 	return mColor;
+}
+
+std::vector<std::vector<TilePos*>> AIPlayer::getWeightGrid()
+{
+	return vecTileGrid;
 }
 
 void AIPlayer::updateTileWeights()
@@ -129,8 +135,8 @@ void AIPlayer::updateTileWeights()
 			else if (!lastTile) {
 				xCenter = rand() % (boardSize - 1);
 				yCenter = rand() % (boardSize - 1);
-				vecTileGrid[xCenter][yCenter]->weight = 2;
-				continue;
+				checkingColor = mColor;
+				vecTileGrid[xCenter][yCenter]->weight = 100;
 			}
 			else continue;
 		}
@@ -138,13 +144,22 @@ void AIPlayer::updateTileWeights()
 		//check tiles in every direction from previous tile
 		//and add to new weight
 		for (int dir = 0; dir < 4; dir++) {
-			//weights before and after (in row) new tile added
-			int weightAfter = 0;
-			int weightBeforeCenter = 0;
-			int weightAfterCenter = 0;
-			bool bCenterBlock = false;
+			//weights for first and second empty tiles
+			//before and after (in row) new tile added
+			int weightBeforeFirst = 0;
+			int weightAfterFirst = 0;
 
-			//change coordinates based on direction
+			int weightBeforeSecond = 0;
+			int weightAfterSecond = 0;
+
+			//if the center (new) tile has been checked
+			bool bNewChecked = false;
+			//keep weighing tiles 
+			bool bKeepWeighing = true;
+			//if current position is at the new tile placed
+			bool bAtNewTile = false;
+
+			//change relative coordinates based on direction
 			int xChange = 0;
 			int yChange = 0;
 			switch (dir) {
@@ -167,55 +182,106 @@ void AIPlayer::updateTileWeights()
 			}
 
 			//check every tile in direction until non-checking color
-			TilePos* endTile = NULL;
+			TilePos* endTileFirst = NULL;
+			TilePos* endTileSecond = NULL;
 			for (int i = 0; i < 2 * inRow + 1; i++) {
+				//current checking coordinates
 				int currX = xCenter + i*xChange - inRow * xChange;
 				int currY = yCenter + i*yChange - inRow * yChange;
+
+				//flag if next block not on the board
+				bool bNextOnBoard = true;
+				int nextX = xCenter + (i + 1) * xChange - inRow * xChange;
+				int nextY = yCenter + (i + 1) * yChange - inRow * yChange;
+				if (nextX < 0 || nextX >= boardSize || nextY < 0 || nextY >= boardSize)
+					bNextOnBoard = false;
+
+				//flag if previous block not on the board
+				bool bPrevOnBoard = true;
+				int prevX = xCenter + (i - 1) * xChange - inRow * xChange;
+				int prevY = yCenter + (i - 1) * yChange - inRow * yChange;
+				if (prevX < 0 || prevX >= boardSize || prevY < 0 || prevY >= boardSize)
+					bPrevOnBoard = false;
 
 				//if coordinate is on the board
 				if (currX >= 0 && currX < boardSize && currY >= 0 && currY < boardSize) {
 					int color = vecGameArea[currX][currY].color;
 
-					//add to weight if spot isn't checking color
-					if (color == checkingColor) {
-						//set center block of stones flag
-						//to set weight of adjacent empty squares
-						if (currX == xCenter && currY == yCenter) {
-							bCenterBlock = true;
-							weightBeforeCenter = weightAfter;
-						}
-
-						weightAfter++;
+					//set center block of stones flag
+					//to set weight of adjacent empty squares
+					if (currX == xCenter && currY == yCenter) {
+						bNewChecked = true;
+						bAtNewTile = true;
 					}
-					//set block end points & update weight if length changed
-					//(since center stone bridges gaps)
-					else {
-						//set weights if weights changed based on new stone being added
-						if (endTile && bCenterBlock) {
-							weightAfterCenter = weightAfter - weightBeforeCenter - 1;
+					else bAtNewTile = false;
 
-							//add weight to end tile if block is empty
-							if (vecGameArea[endTile->xGrid][endTile->yGrid].color == stoneColor::NONE) {
-								endTile->weight += 2 * weightAfterCenter + 1 - (player == playerType::SELF);
-								if (weightAfter == 4) {
-									endTile->weight *= 3 + (player == playerType::SELF);
-								}
-							}
-							//add weight to other end tile if block is empty
-							if (vecGameArea[currX][currY].color == stoneColor::NONE) {
-								vecTileGrid[currX][currY]->weight += 2 * weightBeforeCenter + 1 - (player == playerType::SELF);
-								if (weightAfter == 4) {
-									vecTileGrid[currX][currY]->weight *= 3 + (player == playerType::SELF);
-								}
+					//set this as the checking tile since
+					//previous tile wasn't on the board
+					if (!bPrevOnBoard) {
+						endTileFirst = vecTileGrid[currX][currY];
+					}
+
+					//add to weight if spot is the checking color
+					//or if spot is the center (for first stone placed)
+					if (bKeepWeighing && (color == checkingColor || bAtNewTile)) {
+						//increase weights depending on what
+						//empty tile the AI has seen
+						if (endTileSecond) {
+							weightAfterSecond++;
+						}
+						else if (endTileFirst) {
+							weightAfterFirst++;
+						}
+					}
+
+					//check if need to set the tile weights based on the stone color/position
+					if ((color != checkingColor && !bAtNewTile) || !bNextOnBoard) {
+
+						//if another non-opponent tile is found or checking on the edge
+						if ((endTileSecond || !bNextOnBoard) && bKeepWeighing) {
+
+							//sets as endpoint if no second endpoint created yet
+							if (!endTileSecond && !bNextOnBoard) {
+								endTileSecond = vecTileGrid[currX][currY];
+								weightBeforeSecond = weightAfterFirst;
 							}
 
-							//set that the row isn't checking the center block of stones anymore
-							bCenterBlock = false;
+							//add weight to end tile if spot is empty & isn't the new tile placed
+							if (vecGameArea[endTileFirst->xGrid][endTileFirst->yGrid].color == stoneColor::NONE && 
+								(endTileFirst->xGrid != xCenter || endTileFirst->yGrid != yCenter)) {
+								//total length of a row if stone is placed there
+								int totalWeight = weightBeforeFirst + weightAfterFirst + 1;
+
+								//update stone weight based on some more factors
+								addWeightToTile(totalWeight, inRow, player, endTileFirst);
+							}
+							//add weight to other end tile if spot is empty & isn't the new tile placed
+							if (vecGameArea[endTileSecond->xGrid][endTileSecond->yGrid].color == stoneColor::NONE &&
+								(endTileSecond->xGrid != xCenter || endTileSecond->yGrid != yCenter)) {
+								//total length of a row if stone is placed there
+								int totalWeight = weightBeforeSecond + weightAfterSecond + 1;
+
+								//update stone weight based on some more factors
+								addWeightToTile(totalWeight, inRow, player, endTileSecond);
+							}
+							
+							//stops weighing end tiles again
+							bKeepWeighing = false;
 						}
 
-						//restart weighing
-						weightAfter = 0;
-						endTile = vecTileGrid[currX][currY];
+						//sets the ending as the first non-opponent colored space
+						if (bNewChecked) {
+							if (!endTileSecond) {
+								endTileSecond = vecTileGrid[currX][currY];
+								weightBeforeSecond = weightAfterFirst;
+							}
+						}
+						//restart weighing if haven't checked the new tile yet
+						else {
+							weightBeforeFirst = weightAfterFirst;
+							weightAfterFirst = 0;
+							endTileFirst = vecTileGrid[currX][currY];
+						}
 					}
 				}
 			}
@@ -223,8 +289,28 @@ void AIPlayer::updateTileWeights()
 	}
 }
 
-void AIPlayer::sortTiles()
+void AIPlayer::addWeightToTile(int totalWeight, int inRow, int player, TilePos* tileToSet)
 {
+	//increase the weight of certain tile moves more than others
+	if (totalWeight == inRow && player == playerType::SELF) {
+		totalWeight += 4;
+	}
+	else if (totalWeight == inRow && player == playerType::OPPONENT) {
+		totalWeight += 3;
+	}
+	else if (totalWeight == inRow - 1 && player == playerType::SELF) {
+		totalWeight += 2;
+	}
+	else if (totalWeight == inRow - 1 && player == playerType::OPPONENT) {
+		totalWeight += 1;
+	}
+
+	if (totalWeight > tileToSet->weight) {
+		tileToSet->weight = totalWeight;
+	}
+}
+
+void AIPlayer::sortTiles() {
 	TilePos* tempTile;
 	int tempPos;
 
