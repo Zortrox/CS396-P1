@@ -240,7 +240,6 @@ void GomokuGame::setupResources(void)
 {
 	//add resource locations
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/scripts", "FileSystem", "materials");
-	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/programs", "FileSystem", "programs");
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/textures", "FileSystem", "textures");
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/models", "FileSystem", "models");
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/packs/SdkTrays.zip", "Zip", "SdkTrays");
