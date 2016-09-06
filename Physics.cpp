@@ -28,7 +28,7 @@ void Physics::initObjects() {
 	overlappingPairCache = new btDbvtBroadphase();
 	solver = new btSequentialImpulseConstraintSolver();
 	dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-	//sets the gravity (should be default -9.8, but I implicitly set it)
+	//sets the gravity (should be default -9.8, but I exlicitly set it)
 	dynamicsWorld->setGravity(btVector3(0, -9.8f, 0));
 }
 

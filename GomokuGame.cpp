@@ -42,7 +42,7 @@ GomokuGame::~GomokuGame(void)
 bool GomokuGame::configure(void)
 {
 	//load config or display dialog if no file exists
-    if(mRoot->restoreConfig() || mRoot->showConfigDialog())
+    if(mRoot->showConfigDialog()) //mRoot->restoreConfig()
     {
         //create the game window
         mWindow = mRoot->initialise(true, "SANJIGEN ROBOTTO GOMOKUNARABE");
@@ -182,7 +182,7 @@ void GomokuGame::createScene(void) {
 	//ground graphics
 	Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
 	Ogre::MeshManager::getSingleton().createPlane("ground", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-		plane, 200, 200, 10, 10, true, 1, 40, 40, Ogre::Vector3::UNIT_Z);
+		plane, 20, 20, 10, 10, true, 1, 5, 5, Ogre::Vector3::UNIT_Z);
 	Ogre::Entity* entGround = mSceneMgr->createEntity("GroundEntity", "ground");
 	Ogre::SceneNode* nodeGround = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 	nodeGround->attachObject(entGround);
@@ -193,7 +193,7 @@ void GomokuGame::createScene(void) {
 	transformGround.setIdentity();
 	btScalar massGround = 0;	//0 means it can't move
 	btVector3 localGroundInertia(0, 0, 0);
-	shapeGround = new btBoxShape(btVector3(btScalar(60), btScalar(1), btScalar(60)));
+	shapeGround = new btBoxShape(btVector3(btScalar(10), btScalar(1), btScalar(10)));
 	transformGround.setOrigin(btVector3(0, -1, 0));
 	motionGround = new btDefaultMotionState(transformGround);
 	shapeGround->calculateLocalInertia(massGround, localGroundInertia);
@@ -218,13 +218,66 @@ void GomokuGame::createScene(void) {
 
 	//ambient light (global illumination)
 	mSceneMgr->setAmbientLight(Ogre::ColourValue(.5f, .5f, .5f));
+	//mSceneMgr->setAmbientLight(Ogre::ColourValue(0, 0, 0));
+
+	//Spotlight (more "dark and creepy" atmosphere
+	//Ogre::Light* spotlLight = mSceneMgr->createLight("spotLight");
+	//spotlLight->setType(Ogre::Light::LT_SPOTLIGHT);
+	//spotlLight->setDiffuseColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+	//spotlLight->setSpecularColour(Ogre::ColourValue(1.0f, 1.0f, 1.0f));
+	//spotlLight->setDirection(Ogre::Vector3(0, -1, 0));
+	//spotlLight->setPosition(Ogre::Vector3(0, 50, 0));
 
 	//shadow technique; sharp shadows
 	mSceneMgr->setShadowTechnique(Ogre::SHADOWTYPE_STENCIL_ADDITIVE);
 
 	//fog
-	mWindow->getViewport(0)->setBackgroundColour(Ogre::ColourValue(0, 0, 0));
-	mSceneMgr->setFog(Ogre::FOG_EXP2, Ogre::ColourValue(0, 0, 0), 0.07f);
+	//mWindow->getViewport(0)->setBackgroundColour(Ogre::ColourValue(0, 0, 0));
+	//mSceneMgr->setFog(Ogre::FOG_EXP2, Ogre::ColourValue(0, 0, 0), 0.07f);
+
+	//create listing of all skyboxes
+	vecSkyboxes.push_back("MPBloodSkyBox");
+	vecSkyboxes.push_back("MPMandarisSkyBox");
+	vecSkyboxes.push_back("SkyBasic01SkyBox");
+	vecSkyboxes.push_back("SkyBasic02SkyBox");
+	vecSkyboxes.push_back("SkyBasic03SkyBox");
+	vecSkyboxes.push_back("SkyBasic04SkyBox");
+	vecSkyboxes.push_back("SkyBasic05SkyBox");
+	vecSkyboxes.push_back("SkyBasic06SkyBox");
+	vecSkyboxes.push_back("SkyBasic07SkyBox");
+	vecSkyboxes.push_back("SkyBasic08SkyBox");
+	vecSkyboxes.push_back("SkyBasic09SkyBox");
+	vecSkyboxes.push_back("SkyBasic10SkyBox");
+	vecSkyboxes.push_back("SkyBasic11SkyBox");
+	vecSkyboxes.push_back("SkyBasic12SkyBox");
+	vecSkyboxes.push_back("SkyBasic13SkyBox");
+	vecSkyboxes.push_back("SkyBasic14SkyBox");
+	vecSkyboxes.push_back("SkyBasic15SkyBox");
+	vecSkyboxes.push_back("SkyBasic16SkyBox");
+	vecSkyboxes.push_back("SkyBasic17SkyBox");
+	vecSkyboxes.push_back("SkyBasic18SkyBox");
+	vecSkyboxes.push_back("SkyBasic19SkyBox");
+	vecSkyboxes.push_back("SkyBasic20SkyBox");
+	vecSkyboxes.push_back("SkyBasic21SkyBox");
+	vecSkyboxes.push_back("SkyBasic22SkyBox");
+	vecSkyboxes.push_back("SkyBasic23SkyBox");
+	vecSkyboxes.push_back("SkyBasic24SkyBox");
+	vecSkyboxes.push_back("SkyBasic25SkyBox");
+	vecSkyboxes.push_back("SkyBasic26SkyBox");
+	vecSkyboxes.push_back("SkyBasic27SkyBox");
+	vecSkyboxes.push_back("SkyBasic28SkyBox");
+	vecSkyboxes.push_back("SkyBasic29SkyBox");
+	vecSkyboxes.push_back("SkyBasic30SkyBox");
+
+	//preload skyboxes
+	//for (size_t skies = 0; skies < vecSkyboxes.size(); skies++) {
+	//	Ogre::MaterialManager::getSingleton().load(vecSkyboxes[skies], "skyboxes");
+	//}
+
+	//set skybox
+	mCurrentSkybox = rand() % vecSkyboxes.size();
+	mSkyboxDist = 100;
+	mSceneMgr->setSkyBox(true, vecSkyboxes[mCurrentSkybox], mSkyboxDist);
 }
 
 void GomokuGame::createViewports(void)
@@ -241,6 +294,7 @@ void GomokuGame::setupResources(void)
 	//add resource locations
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/scripts", "FileSystem", "materials");
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/textures", "FileSystem", "textures");
+	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/materials/textures/skyboxes", "FileSystem", "skyboxes");
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/models", "FileSystem", "models");
 	Ogre::ResourceGroupManager::getSingleton().addResourceLocation("./assets/packs/SdkTrays.zip", "Zip", "SdkTrays");
 
@@ -271,6 +325,9 @@ bool GomokuGame::setup(void)
 	//plugins required for game
 	Ogre::StringVector plugins_toLoad;
 	plugins_toLoad.push_back("RenderSystem_GL");
+	plugins_toLoad.push_back("RenderSystem_Direct3D9");
+
+	//plugin I might add later (winning fireworks?)
 	plugins_toLoad.push_back("Plugin_ParticleFX");
 
 	//load the plugins (based on debug/release build)
@@ -359,17 +416,17 @@ bool GomokuGame::frameRenderingQueued(const Ogre::FrameEvent& evt)
 	}
 
 	//start next turn when board has fallen to the ground & is ready
-	if (rigidTable->getLinearVelocity().length() > 0.1f) {
+	if (!bGameOver && rigidTable->getLinearVelocity().length() > 0.1f) {
 		bHasFallen = true;
 	}
-	if (!bGameStart && bHasFallen && rigidTable->getLinearVelocity().length() < 0.001f) {
+	if (!bGameStart && !bGameOver && bHasFallen && rigidTable->getLinearVelocity().length() < 0.001f) {
 		bGameStart = true;
 		nextTurn();
 	}
 
 	//if game is AI v AI, delay each AI's moves
 	//otherwise the game is over almost instantly
-	float timeWait = 0.1f;	//seconds
+	float timeWait = 0.05f;	//seconds
 	if (bGameStart && bGameAIVAI && !bGameOver) {
 		mAITurnTimer += evt.timeSinceLastFrame;
 		if (mAITurnTimer >= timeWait) {
@@ -686,7 +743,7 @@ void GomokuGame::setStonePhysics() {
 
 		//"flip" the table based on who won
 		int flipDirection = 1;
-		if ((bGameVSAI || bGameAIVAI) && playerAI.getPlayerNum() != mGameWinner) flipDirection = -1;
+		if ((bGameVSAI || bGameAIVAI) && playerAI.getPlayerNum() != mGameWinner && bGameOver) flipDirection = -1;
 		rigidTable->applyImpulse(btVector3(0, 30, 50 * flipDirection), btVector3(0, 0, 10 * flipDirection));
 	}
 
@@ -825,7 +882,7 @@ void GomokuGame::resetGame() {
 			newColor = stoneColor::WHITE;
 			break;
 		}
-		playerAI.setPlayerNum(playerAINum, newColor);
+		playerAI.setPlayerNum(playerAINum, newColor, playerAINum == gamePlayers::P_BLACK);
 
 		//reset AI #2
 		if (bGameAIVAI) {
@@ -848,13 +905,17 @@ void GomokuGame::resetGame() {
 				newColor = stoneColor::WHITE;
 				break;
 			}
-			playerAI2.setPlayerNum(playerAINum2, newColor);
+			playerAI2.setPlayerNum(playerAINum2, newColor, playerAINum2 == gamePlayers::P_BLACK);
 		}
 	}
 	//set player label back to black (player 1)
 	setPlayerLabel(true);
 
-	//clear winner from screen & reset previous game winner
+	//new skybox
+	mCurrentSkybox = rand() % vecSkyboxes.size();
+	mSceneMgr->setSkyBox(true, vecSkyboxes[mCurrentSkybox], mSkyboxDist);
+
+	//clear winner from screen & reset previous game winner (if not first time running the game)
 	if (mGameWinner != gameWinners::COUNT) {
 		mTrayMgr->removeWidgetFromTray(vecWinnerLabels[mGameWinner]);
 		vecWinnerLabels[mGameWinner]->hide();

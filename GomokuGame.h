@@ -175,4 +175,7 @@ private:
 	int mCurrentPlayer;	//player's turn
 	int mGameWinner; //winner of the game
 	float mAITurnTimer;	//timer; sets when the AI v AI players can make a move
+	std::vector<std::string> vecSkyboxes;	//listing of all skybox textures
+	int mCurrentSkybox;	//current skybox being displayed
+	float mSkyboxDist;	//distance skybox is from player
 };

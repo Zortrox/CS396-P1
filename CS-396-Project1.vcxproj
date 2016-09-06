@@ -23,6 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CS396Project1</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>GomokuGame</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -159,6 +160,7 @@
     <ClInclude Include="GomokuBoard.h" />
     <ClInclude Include="GomokuGame.h" />
     <ClInclude Include="Physics.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\BulletCollision.vcxproj">
@@ -170,6 +172,12 @@
     <ProjectReference Include="D:\SDKs\Bullet3\build3\vs2010\LinearMath.vcxproj">
       <Project>{27fb4b66-d600-934d-8e2d-e6d48a5b4a3a}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CS-396-Project1.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="robot.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -75,10 +75,11 @@ TilePos* AIPlayer::getNextMove()
 	return placedTile;
 }
 
-void AIPlayer::setPlayerNum(int num, int color)
+void AIPlayer::setPlayerNum(int num, int color, bool firstPlayer)
 {
 	mPlayerNum = num;
 	mColor = color;
+	mFirstPlayer = firstPlayer;
 }
 
 int AIPlayer::getPlayerNum()
@@ -292,10 +293,10 @@ void AIPlayer::updateTileWeights()
 void AIPlayer::addWeightToTile(int totalWeight, int inRow, int player, TilePos* tileToSet)
 {
 	//increase the weight of certain tile moves more than others
-	if (totalWeight == inRow && player == playerType::SELF) {
+	if (totalWeight >= inRow && player == playerType::SELF) {
 		totalWeight += 4;
 	}
-	else if (totalWeight == inRow && player == playerType::OPPONENT) {
+	else if (totalWeight >= inRow && player == playerType::OPPONENT) {
 		totalWeight += 3;
 	}
 	else if (totalWeight == inRow - 1 && player == playerType::SELF) {

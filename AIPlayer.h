@@ -41,7 +41,7 @@ public:
 	TilePos* getNextMove();
 
 	//set the player number (turn number)
-	void setPlayerNum(int num, int color);
+	void setPlayerNum(int num, int color, bool firstPlayer);
 
 	//get the player number
 	int getPlayerNum();
@@ -67,4 +67,5 @@ private:
 	std::vector< std::vector<TilePos*> > vecTileGrid;	//2d array of tiles on board
 	std::vector<TilePos*> vecTileWeights;				//tiles sorted by weights
 	GomokuBoard* gBoard;	//pointer to the game board
+	bool mFirstPlayer;		//flag if first player (black)
 };
