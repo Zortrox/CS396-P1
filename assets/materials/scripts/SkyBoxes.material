@@ -1,0 +1,575 @@
+material MPBloodSkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture blood.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material MPMandarisSkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture mandaris.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic01SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky01.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic02SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky02.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic03SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky03.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic04SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky04.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic05SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky05.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic06SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky06.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic07SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky07.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic08SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky08.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic09SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky09.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic10SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky10.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic11SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky11.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic12SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky12.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic13SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky13.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic14SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky14.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic15SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky15.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic16SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky16.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic17SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky17.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic18SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky18.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic19SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky19.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic20SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky20.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic21SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky21.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic22SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky22.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic23SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky23.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic24SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky24.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic25SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky25.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic26SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky26.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic27SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky27.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic28SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky28.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic29SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky29.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+material SkyBasic30SkyBox
+{
+	technique
+	{
+		pass
+		{
+			lighting off
+			depth_write off
+
+			texture_unit
+			{
+				cubic_texture sky30.jpg separateUV
+				tex_address_mode clamp
+			}
+		}
+	}
+}
