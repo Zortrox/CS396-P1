@@ -1,4 +1,4 @@
-/*
+﻿/*
 	GomokuGame.cpp
 	Sets up the game, input, display, and resources
 
