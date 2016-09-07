@@ -317,18 +317,9 @@ bool GomokuGame::setup(void)
 	//Ogre base graphics engine
 	mRoot = new Ogre::Root("", "ogre.cfg", "LowLevelOgre.log");
 
-	//required plugins for Ogre (loaded first)
-	Ogre::StringVector required_plugins;
-	required_plugins.push_back("GL RenderSystem");
-	required_plugins.push_back("Octree & Terrain Scene Manager");
-
 	//plugins required for game
 	Ogre::StringVector plugins_toLoad;
-	plugins_toLoad.push_back("RenderSystem_GL");
-	plugins_toLoad.push_back("RenderSystem_Direct3D9");
-
-	//plugin I might add later (winning fireworks?)
-	plugins_toLoad.push_back("Plugin_ParticleFX");
+	plugins_toLoad.push_back("RenderSystem_GL");	//openGL
 
 	//load the plugins (based on debug/release build)
 	for (Ogre::StringVector::iterator j = plugins_toLoad.begin(); j != plugins_toLoad.end(); j++)
